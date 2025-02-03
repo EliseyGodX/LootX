@@ -1,0 +1,71 @@
+{% extends 'base.html' %} {% block content %}
+<div style="height: 50px;"></div>
+<div class="card bg-dark text-light mx-auto p-4" style="width: 18rem;">
+    <h1 class="text-center">Регистрация</h1>
+    <form id="registrationForm">
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" required>
+        </div>
+        <div class="mb-3">
+            <label for="repeatPassword" class="form-label">Repeat password</label>
+            <input type="password" class="form-control" id="repeatPassword" required>
+        </div>
+        <div id="passwordError" class="text-danger" style="display: none;">Пароли не совпадают!</div>
+        <div id="usernameError" class="text-danger" style="display: none;">Юзернейм должен быть от 2 до 12 символов!</div>
+        <div id="passwordLengthError" class="text-danger" style="display: none;">Пароль должен содержать не менее 5 символов!</div>
+        <div style="height: 10px;"></div>
+        <button type="submit" class="btn btn-primary w-100">Submit</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById("registrationForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const repeatPassword = document.getElementById("repeatPassword").value;
+
+        document.getElementById("passwordError").style.display = "none";
+        document.getElementById("usernameError").style.display = "none";
+        document.getElementById("passwordLengthError").style.display = "none";
+
+        if (username.length < 2 || username.length > 12) {
+            document.getElementById("usernameError").style.display = "block";
+            return;
+        }
+
+        if (password.length < 5) {
+            document.getElementById("passwordLengthError").style.display = "block";
+            return;
+        }
+
+        if (password !== repeatPassword) {
+            document.getElementById("passwordError").style.display = "block";
+            return;
+        }
+
+        const data = {
+            username: username,
+            email: document.getElementById("email").value,
+            password: password
+        };
+
+        const response = await fetch("/registration", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+    });
+</script>
+{% endblock %}

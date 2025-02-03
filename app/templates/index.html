@@ -1,0 +1,171 @@
+{% extends 'base.html' %} {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<div class="left-side">
+  <div class="column-left">
+    <div style="float: left">
+      <div class="iconlarge" data-env="cata" data-tree="cata" data-game="wow">
+        <ins
+          style="
+            background-image: url('https://wow.zamimg.com/images/wow/icons/large/inv_helmet_159.jpg');
+          "
+          class=""
+        ></ins
+        ><del></del><a aria-label="Icon" href="javascript:"></a>
+      </div>
+    </div>
+    <div
+      class="wowhead-tooltip wowhead-tooltip-width-restriction tooltip-slider"
+      style="float: left; padding-top: 1px; visibility: visible; width: 320px;"
+      data-visible="yes"
+    >
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tr>
+                  <td>
+                    <table style="display:inline-table; vertical-align:inherit">
+                      <tr>
+                        <td><!--nstart--><b class="q4">Ghoul Commander's Cuirass</b><!--nend--></td>
+                        <th><b class="q0 whtt-extra">Phase 4</b></th>
+                      </tr>
+                    </table><!--ndstart--><br /><span class="q2">Heroic</span><!--ndend--><span class="q"><br>Item Level <!--ilvl-->264</span><!--bo--><br>Binds when picked up<!--ue--><table width="100%">
+                      <tr>
+                        <td>Chest</td>
+                        <th><!--scstart4:4--><span class="q1">Plate</span><!--scend--></th>
+                      </tr>
+                    </table><!--rf--><span><!--amr-->2641 Armor</span><br><span><!--stat4-->+162 Strength</span><br><span><!--stat7-->+207 Stamina</span><!--ebstats--><!--egstats--><!--eistats--><!--nameDescStats--><!--rs--><!--e--><br /><br><a href="https://www.wowhead.com/wotlkwotlk/items/gems?filter=81;3;0" class="socket-yellow q0">Yellow Socket</a><br><a href="https://www.wowhead.com/wotlkwotlk/items/gems?filter=81;4;0" class="socket-blue q0">Blue Socket</a><br><a href="https://www.wowhead.com/wotlkwotlk/items/gems?filter=81;4;0" class="socket-blue q0">Blue Socket</a><!--ps--><br><!--sb--><span class="q0">Socket Bonus: +8 Dodge Rating</span><br /><br />Durability 165 / 165
+                    </td>
+                  </tr>
+                </table>
+                <table>
+                  <tr>
+                    <td>Requires Level <!--rlvl-->80<br><!--rr--><span class="q2">Equip: Increases defense rating by <!--rtg12-->91.</span><br><span class="q2">Equip: Increases your dodge rating by <!--rtg13-->51.</span><br><span class="q2">Equip: Increases your parry rating by <!--rtg14-->85.</span><!--itemEffects:1--><br><!--pvpEquip--><!--pvpEquip--><div class="whtt-sellprice">Sell Price: <span class="moneygold">17</span> <span class="moneysilver">64</span> <span class="moneycopper">43</span></div><div class="whtt-extra whtt-droppedby">Dropped by: Lady Deathwhisper</div><div class="whtt-extra whtt-dropchance">Drop Chance: 3.21%</div>
+                    </td>
+                  </tr>
+                </table><!--i?51917:1:80:80-->
+              </td>
+              <th style="background-position: top right"></th>
+            </tr>
+            <tr>
+              <th style="background-position: bottom left"></th>
+              <th style="background-position: bottom right"></th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="container mt-1">
+      <form id="tiles-form">
+        <div id="tiles-container">
+          <div class="col" data-id="1">
+            <div class="tile card text-center p-3 hunter">Tile 1</div>
+          </div>
+          <div class="col" data-id="2">
+            <div class="tile card text-center p-3">Tile 2</div>
+          </div>
+          <div class="col" data-id="3">
+            <div class="tile card text-center p-3">Tile 3</div>
+          </div>
+          <div class="col" data-id="1">
+            <div class="tile card text-center p-3 hunter">Tile 1</div>
+          </div>
+          <div class="col" data-id="2">
+            <div class="tile card text-center p-3">Tile 2</div>
+          </div>
+          <div class="col" data-id="3">
+            <div class="tile card text-center p-3">Tile 3</div>
+          </div>
+          <div class="col" data-id="1">
+            <div class="tile card text-center p-3 hunter">Tile 1</div>
+          </div>
+          <div class="col" data-id="2">
+            <div class="tile card text-center p-3">Tile 2</div>
+          </div>
+          <div class="col" data-id="3">
+            <div class="tile card text-center p-3">Tile 3</div>
+          </div>
+          <div class="col" data-id="1">
+            <div class="tile card text-center p-3 hunter">Tile 1</div>
+          </div>
+          <div class="col" data-id="2">
+            <div class="tile card text-center p-3">Tile 2</div>
+          </div>
+          <div class="col" data-id="3">
+            <div class="tile card text-center p-3">Tile 3</div>
+          </div>
+          <div class="col" data-id="1">
+            <div class="tile card text-center p-3 hunter">Tile 1</div>
+          </div>
+          <div class="col" data-id="2">
+            <div class="tile card text-center p-3">Tile 2</div>
+          </div>
+          <div class="col" data-id="3">
+            <div class="tile card text-center p-3">Tile 3</div>
+          </div>
+        </div>
+        <input type="hidden" name="tile_order" id="tile-order" />
+        <button
+          type="submit"
+          id="submit-btn"
+          class="btn btn-primary mt-1 btn-dark"
+          disabled
+        >
+          Submit
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  const container = document.getElementById("tiles-container");
+  const orderInput = document.getElementById("tile-order");
+  const submitBtn = document.getElementById("submit-btn");
+  let initialOrder = "";
+
+  new Sortable(container, {
+    animation: 150,
+    onEnd: function () {
+      // Обновление порядка плиток
+      updateTileOrder();
+      enableSubmitButton();
+    },
+  });
+
+  function updateTileOrder() {
+    const tileOrder = Array.from(container.children)
+      .map((tile) => tile.dataset.id)
+      .join("");
+    orderInput.value = tileOrder;
+  }
+
+  function enableSubmitButton() {
+    if (orderInput.value !== initialOrder) {
+      submitBtn.disabled = false;
+    }
+  }
+
+  document
+    .getElementById("tiles-form")
+    .addEventListener("submit", function (event) {
+      event.preventDefault(); // Отключение стандартного поведения формы
+      initialOrder = orderInput.value; // Сохранение текущего порядка плиток
+      submitBtn.disabled = true; // Деактивация кнопки отправки
+
+      fetch("/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `tile_order=${encodeURIComponent(orderInput.value)}`,
+      }).then((response) => response.text());
+    });
+
+  // Инициализация порядка плиток
+  updateTileOrder();
+  initialOrder = orderInput.value;
+</script>
+{% endblock %}

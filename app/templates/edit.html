@@ -1,0 +1,525 @@
+{% extends 'base.html' %} {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<div class="split-screen">
+
+    <div class="left-panel">
+        <div class="clearfix">
+            <div style="float: left">
+                <div class="iconlarge" data-env="cata" data-tree="cata" data-game="wow">
+                    <ins style="
+                      background-image: url('https://wow.zamimg.com/images/wow/icons/large/inv_helmet_159.jpg');
+                    " class=""></ins><del></del><a aria-label="Icon" href="javascript:"></a>
+                </div>
+            </div>
+            <div class="wowhead-tooltip wowhead-tooltip-width-restriction tooltip-slider"
+                style="float: left; padding-top: 1px; visibility: visible; width: 320px;" data-visible="yes">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <table style="display:inline-table; vertical-align:inherit">
+                                                <tr>
+                                                    <td><!--nstart--><b class="q4">Набедренники утраченной
+                                                            надежды</b><!--nend--></td>
+                                                    <th><b class="q0 whtt-extra">4-я фаза</b></th>
+                                                </tr>
+                                            </table><!--ndstart--><br /><span
+                                                class="q2">Героический</span><!--ndend--><span class="q"><br>Уровень
+                                                предмета: <!--ilvl-->277</span><!--bo--><br>Становится персональным при
+                                            поднятии<!--ue-->
+                                            <table width="100%">
+                                                <tr>
+                                                    <td>Ноги</td>
+                                                    <th><!--scstart4:4--><span class="q1">Латы</span><!--scend--></th>
+                                                </tr>
+                                            </table><!--rf--><span><!--amr-->Броня:
+                                                2412</span><br><span><!--stat4-->+139 к
+                                                силе</span><br><span><!--stat7-->+239 к
+                                                выносливости</span><!--ebstats--><!--egstats--><!--eistats--><!--nameDescStats--><!--rs--><!--e--><br /><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;2;0"
+                                                class="socket-red q0">Красное гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;4;0"
+                                                class="socket-blue q0">Синее гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;3;0"
+                                                class="socket-yellow q0">Желтое гнездо</a><!--ps--><br><!--sb--><span
+                                                class="q0">При соответствии цвета: +12 к
+                                                выносливости</span><br /><br />Прочность: 120 / 120
+                                        </td>
+                                    </tr>
+                                </table>
+                                <table>
+                                    <tr>
+                                        <td>Требуется <!--rlvl-->80-й ур.<br><!--rr--><span class="q2">Если на
+                                                персонаже: Повышает рейтинг защиты на <!--rtg12-->106.</span><br><span
+                                                class="q2">Если на персонаже: Повышает рейтинг уклонения на
+                                                <!--rtg13-->122.</span><br><span class="q2">Если на персонаже: Повышает
+                                                рейтинг меткости на
+                                                <!--rtg31-->85.</span><!--itemEffects:1--><br><!--pvpEquip--><!--pvpEquip-->
+                                            <div class="whtt-sellprice">Цена продажи: <span class="moneygold">19</span>
+                                                <span class="moneysilver">22</span> <span class="moneycopper">93</span>
+                                            </div>
+                                            <div class="whtt-extra whtt-droppedby">Добывается с: Лорд Ребрад</div>
+                                            <div class="whtt-extra whtt-dropchance">Вероятность получения: 3.58%</div>
+                                        </td>
+                                    </tr>
+                                </table><!--i?50612:1:80:80-->
+                            </td>
+                            <th style="background-position: top right"></th>
+                        </tr>
+                        <tr>
+                            <th style="background-position: bottom left"></th>
+                            <th style="background-position: bottom right"></th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tiles-form">
+                <form>
+                    <button type="submit" class="btn mt-1 btn-warning submit-btn" disabled>Submit</button>
+                    <div class="tiles-container d-flex flex-column">
+                        <div class="col" data-id="1">
+                            <div class="tile card text-center p-3">Tile 1</div>
+                        </div>
+                        <div class="col" data-id="2">
+                            <div class="tile card text-center p-3">Tile 2</div>
+                        </div>
+                    </div>
+                    <input type="hidden" class="tile-order" />
+                </form>
+            </div>
+        </div>
+
+        <hr style="border-color: rgb(200, 200, 200);">
+
+        <div class="clearfix">
+            <div style="float: left">
+                <div class="iconlarge" data-env="cata" data-tree="cata" data-game="wow">
+                    <ins style="
+                      background-image: url('https://wow.zamimg.com/images/wow/icons/large/inv_helmet_159.jpg');
+                    " class=""></ins><del></del><a aria-label="Icon" href="javascript:"></a>
+                </div>
+            </div>
+            <div class="wowhead-tooltip wowhead-tooltip-width-restriction tooltip-slider"
+                style="float: left; padding-top: 1px; visibility: visible; width: 320px;" data-visible="yes">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <table style="display:inline-table; vertical-align:inherit">
+                                                <tr>
+                                                    <td><!--nstart--><b class="q4">Набедренники утраченной
+                                                            надежды</b><!--nend--></td>
+                                                    <th><b class="q0 whtt-extra">4-я фаза</b></th>
+                                                </tr>
+                                            </table><!--ndstart--><br /><span
+                                                class="q2">Героический</span><!--ndend--><span class="q"><br>Уровень
+                                                предмета: <!--ilvl-->277</span><!--bo--><br>Становится персональным при
+                                            поднятии<!--ue-->
+                                            <table width="100%">
+                                                <tr>
+                                                    <td>Ноги</td>
+                                                    <th><!--scstart4:4--><span class="q1">Латы</span><!--scend--></th>
+                                                </tr>
+                                            </table><!--rf--><span><!--amr-->Броня:
+                                                2412</span><br><span><!--stat4-->+139 к
+                                                силе</span><br><span><!--stat7-->+239 к
+                                                выносливости</span><!--ebstats--><!--egstats--><!--eistats--><!--nameDescStats--><!--rs--><!--e--><br /><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;2;0"
+                                                class="socket-red q0">Красное гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;4;0"
+                                                class="socket-blue q0">Синее гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;3;0"
+                                                class="socket-yellow q0">Желтое гнездо</a><!--ps--><br><!--sb--><span
+                                                class="q0">При соответствии цвета: +12 к
+                                                выносливости</span><br /><br />Прочность: 120 / 120
+                                        </td>
+                                    </tr>
+                                </table>
+                                <table>
+                                    <tr>
+                                        <td>Требуется <!--rlvl-->80-й ур.<br><!--rr--><span class="q2">Если на
+                                                персонаже: Повышает рейтинг защиты на <!--rtg12-->106.</span><br><span
+                                                class="q2">Если на персонаже: Повышает рейтинг уклонения на
+                                                <!--rtg13-->122.</span><br><span class="q2">Если на персонаже: Повышает
+                                                рейтинг меткости на
+                                                <!--rtg31-->85.</span><!--itemEffects:1--><br><!--pvpEquip--><!--pvpEquip-->
+                                            <div class="whtt-sellprice">Цена продажи: <span class="moneygold">19</span>
+                                                <span class="moneysilver">22</span> <span class="moneycopper">93</span>
+                                            </div>
+                                            <div class="whtt-extra whtt-droppedby">Добывается с: Лорд Ребрад</div>
+                                            <div class="whtt-extra whtt-dropchance">Вероятность получения: 3.58%</div>
+                                        </td>
+                                    </tr>
+                                </table><!--i?50612:1:80:80-->
+                            </td>
+                            <th style="background-position: top right"></th>
+                        </tr>
+                        <tr>
+                            <th style="background-position: bottom left"></th>
+                            <th style="background-position: bottom right"></th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tiles-form">
+                <form>
+                    <button type="submit" class="btn mt-1 btn-warning submit-btn" disabled>Submit</button>
+                    <div class="tiles-container d-flex flex-column">
+                        <div class="col" data-id="1">
+                            <div class="tile card text-center p-3">Tile 1</div>
+                        </div>
+                        <div class="col" data-id="2">
+                            <div class="tile card text-center p-3">Tile 2</div>
+                        </div>
+                    </div>
+                    <input type="hidden" class="tile-order" />
+                </form>
+            </div>
+        </div>
+
+        <hr style="border-color: rgb(200, 200, 200);">
+
+        <div class="clearfix">
+            <div style="float: left">
+                <div class="iconlarge" data-env="cata" data-tree="cata" data-game="wow">
+                    <ins style="
+                      background-image: url('https://wow.zamimg.com/images/wow/icons/large/inv_helmet_159.jpg');
+                    " class=""></ins><del></del><a aria-label="Icon" href="javascript:"></a>
+                </div>
+            </div>
+            <div class="wowhead-tooltip wowhead-tooltip-width-restriction tooltip-slider"
+                style="float: left; padding-top: 1px; visibility: visible; width: 320px;" data-visible="yes">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <table style="display:inline-table; vertical-align:inherit">
+                                                <tr>
+                                                    <td><!--nstart--><b class="q4">Набедренники утраченной
+                                                            надежды</b><!--nend--></td>
+                                                    <th><b class="q0 whtt-extra">4-я фаза</b></th>
+                                                </tr>
+                                            </table><!--ndstart--><br /><span
+                                                class="q2">Героический</span><!--ndend--><span class="q"><br>Уровень
+                                                предмета: <!--ilvl-->277</span><!--bo--><br>Становится персональным при
+                                            поднятии<!--ue-->
+                                            <table width="100%">
+                                                <tr>
+                                                    <td>Ноги</td>
+                                                    <th><!--scstart4:4--><span class="q1">Латы</span><!--scend--></th>
+                                                </tr>
+                                            </table><!--rf--><span><!--amr-->Броня:
+                                                2412</span><br><span><!--stat4-->+139 к
+                                                силе</span><br><span><!--stat7-->+239 к
+                                                выносливости</span><!--ebstats--><!--egstats--><!--eistats--><!--nameDescStats--><!--rs--><!--e--><br /><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;2;0"
+                                                class="socket-red q0">Красное гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;4;0"
+                                                class="socket-blue q0">Синее гнездо</a><br><a
+                                                href="https://www.wowhead.com/wotlk/ruwotlk/ru/items/gems?filter=81;3;0"
+                                                class="socket-yellow q0">Желтое гнездо</a><!--ps--><br><!--sb--><span
+                                                class="q0">При соответствии цвета: +12 к
+                                                выносливости</span><br /><br />Прочность: 120 / 120
+                                        </td>
+                                    </tr>
+                                </table>
+                                <table>
+                                    <tr>
+                                        <td>Требeeeeeуется <!--rlvl-->80-й ур.<br><!--rr--><span class="q2">Если на
+                                                персонаже: Повышает рейтинг защиты на <!--rtg12-->106.</span><br><span
+                                                class="q2">Если на персонаже: Повышает рейтинг уклонения на
+                                                <!--rtg13-->122.</span><br><span class="q2">Если на персонаже: Повышает
+                                                рейтинг меткости на
+                                                <!--rtg31-->85.</span><!--itemEffects:1--><br><!--pvpEquip--><!--pvpEquip-->
+                                            <div class="whtt-sellprice">Цена продажи: <span class="moneygold">19</span>
+                                                <span class="moneysilver">22</span> <span class="moneycopper">93</span>
+                                            </div>
+                                            <div class="whtt-extra whtt-droppedby">Добывается с: Лорд Ребрад</div>
+                                            <div class="whtt-extra whtt-dropchance">Вероятность получения: 3.58%</div>
+                                        </td>
+                                    </tr>
+                                </table><!--i?50612:1:80:80-->
+                            </td>
+                            <th style="background-position: top right"></th>
+                        </tr>
+                        <tr>
+                            <th style="background-position: bottom left"></th>
+                            <th style="background-position: bottom right"></th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tiles-form">
+                <form>
+                    <button type="submit" class="btn mt-1 btn-warning submit-btn" disabled>Submit</button>
+                    <div class="tiles-container d-flex flex-column">
+                        <div class="col" data-id="1">
+                            <div class="tile card text-center p-3">Tile 1</div>
+                        </div>
+                        <div class="col" data-id="2">
+                            <div class="tile card text-center p-3">Tile 2</div>
+                        </div>
+                    </div>
+                    <input type="hidden" class="tile-order" />
+                </form>
+            </div>
+        </div>
+        <div style="height: 100px;"></div>
+    </div>
+
+    <div class="right-panel">
+        <div class="container mt-3">
+            <div id="warehouse" class="warehouse">
+                <h4>Воины</h4>
+                <div class="class-container mt-3">
+                    <div class="tile card text-center p-3 hunter">123456789012</div>
+                    <div class="tile card text-center p-3">Игрок2</div>
+                    <div class="tile card text-center p-3">Игрок2</div>
+                </div>
+                <hr style="border-color: rgb(200, 200, 200);">
+                <h4>Маги</h4>
+                <div class="class-container mt-3" id="mage-container">
+                    <div class="tile card text-center p-3">Игрок3</div>
+                    <div class="tile card text-center p-3">Игрок4</div>
+                </div>
+                <hr style="border-color: rgb(200, 200, 200);">
+                <h4>Охотники</h4>
+                <div class="class-container mt-3">
+                    <div class="tile card text-center p-3">Игрок5</div>
+                    <div class="tile card text-center p-3">Игрок6</div>
+                </div>
+                <hr style="border-color: rgb(200, 200, 200);">
+                <h4>Добавить игрока</h4>
+                <div class="d-flex gap-2 align-items-center">
+                    <input id="player-name" class="form-control-sm" type="text" placeholder="Введите имя игрока"
+                        aria-label="player name">
+                    <select id="player-class" class="form-select form-select-sm" aria-label="Выберите класс">
+                        <option value="" selected>Выберите класс</option>
+                        <option value="warrior">Воин</option>
+                        <option value="mage">Маг</option>
+                        <option value="hunter">Охотник</option>
+                    </select>
+                    <button id="add-player-btn" type="button" class="btn btn-warning" disabled>Добавить</button>
+                </div>
+                <hr style="border-color: rgb(200, 200, 200);">
+                <div class="dropzone">Удалить</div>
+                <hr style="border-color: rgb(200, 200, 200);">
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#exampleModal"  style="float: right">
+                    Удалить игрока
+                </button>
+
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content bg-dark">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление игрока</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <select id="del-player-select" class="form-select form-select-sm"
+                                    aria-label="Выберите игрока">
+                                    <option value="" selected>Выберите игрока</option>
+                                    <option value="Игрок2">Игрок2</option>
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="button" id="delete-player-btn" class="btn btn-danger"
+                                    disabled>Удалить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="height: 100px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tiles-form').forEach(form => {
+            const container = form.querySelector('.tiles-container');
+            const orderInput = form.querySelector('.tile-order');
+            const submitBtn = form.querySelector('.submit-btn');
+            let initialOrder = "";
+
+            function updateTileOrder() {
+                const tileOrder = Array.from(container.children)
+                    .map(tile => tile.textContent.trim())
+                    .join(",");
+                orderInput.value = tileOrder;
+            }
+
+            function enableSubmitButton() {
+                submitBtn.disabled = (orderInput.value === initialOrder || orderInput.value === "");
+            }
+
+            new Sortable(container, {
+                group: {
+                    name: "players",
+                    put: function (to, from, dragged) {
+                        // Проверяем, есть ли уже такая плитка в контейнере
+                        return !Array.from(to.el.children).some(tile => tile.textContent.trim() === dragged.textContent.trim());
+                    }
+                },
+                animation: 150,
+                onEnd: function () {
+                    updateTileOrder();
+                    enableSubmitButton();
+                },
+                onAdd: function () {
+                    updateTileOrder();
+                    enableSubmitButton();
+                }
+            });
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+                initialOrder = orderInput.value;
+                submitBtn.disabled = true;
+
+                fetch("/submit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `tile_order=${encodeURIComponent(orderInput.value)}`,
+                }).then(response => response.text());
+            });
+
+            updateTileOrder();
+            initialOrder = orderInput.value;
+        });
+
+        document.querySelectorAll('.class-container').forEach(container => {
+            new Sortable(container, {
+                group: {
+                    name: "players",
+                    pull: "clone", // Делаем копии плиток
+                    put: false
+                },
+                sort: false,
+                animation: 150
+            });
+        });
+
+        // Добавляем Sortable для dropzone (зоны удаления)
+        document.querySelectorAll('.dropzone').forEach(dropzone => {
+            new Sortable(dropzone, {
+                group: "players", // Совпадает с group плиток
+                onAdd: function (evt) {
+                    evt.item.remove(); // Удаляем элемент при переносе в dropzone
+                }
+            });
+        });
+
+        const playerNameInput = document.getElementById('player-name');
+        const playerClassSelect = document.getElementById('player-class');
+        const addPlayerBtn = document.getElementById('add-player-btn');
+
+        // Функция для включения/выключения кнопки
+        function updateButtonState() {
+            const name = playerNameInput.value.trim();
+            const playerClass = playerClassSelect.value;
+            const isValidName = name.length >= 2 && name.length <= 12;
+
+            addPlayerBtn.disabled = !(isValidName && playerClass);
+        }
+
+        // Обработчики ввода
+        playerNameInput.addEventListener('input', updateButtonState);
+        playerClassSelect.addEventListener('change', updateButtonState);
+
+        // Добавление нового игрока
+        addPlayerBtn.addEventListener('click', function () {
+            const playerName = playerNameInput.value.trim();
+            const playerClass = playerClassSelect.value;
+
+            if (!playerName || !playerClass) return;
+
+            const classContainer = document.getElementById(`${playerClass}-container`);
+
+            if (!classContainer) {
+                alert(`Ошибка: контейнер для класса ${playerClass} не найден.`);
+                return;
+            }
+
+            // Проверяем, есть ли игрок уже на складе
+            const existingPlayers = classContainer.querySelectorAll('.tile');
+            for (let player of existingPlayers) {
+                if (player.textContent === playerName) {
+                    alert("Игрок с таким именем уже есть на складе!");
+                    return;
+                }
+            }
+
+            // Создаём новую плитку
+            const newTile = document.createElement('div');
+            newTile.className = `tile card text-center p-3 ${playerClass}`;
+            newTile.textContent = playerName;
+            newTile.dataset.class = playerClass;
+
+            classContainer.appendChild(newTile);
+
+            // Очистка полей ввода
+            playerNameInput.value = '';
+            playerClassSelect.value = '';
+            updateButtonState(); // Выключить кнопку после добавления
+
+            // Делаем новые плитки перетаскиваемыми
+            new Sortable(classContainer, {
+                group: "shared",
+                animation: 150
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const playerSelect = document.getElementById('del-player-select');
+                const deletePlayerBtn = document.getElementById('delete-player-btn');
+
+                // Разблокировка кнопки при изменении выбора
+                playerSelect.addEventListener('change', function () {
+                    deletePlayerBtn.disabled = playerSelect.value === ""; // Если ничего не выбрано, кнопка заблокирована
+                });
+
+                // Удаление игрока
+                deletePlayerBtn.addEventListener('click', function () {
+                    const playerName = playerSelect.value;
+                    if (!playerName) return;
+
+                    fetch('/delete_player', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: playerName })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Удаляем игрока со склада
+                                document.querySelectorAll('.warehouse .tile').forEach(tile => {
+                                    if (tile.textContent.trim() === playerName) {
+                                        tile.remove();
+                                    }
+                                });
+
+                                // Закрываем модальное окно
+                                const modal = bootstrap.Modal.getInstance(modalElement);
+                                modal.hide();
+                            } else {
+                                alert('Ошибка удаления игрока!');
+                            }
+                        })
+                        .catch(error => console.error('Ошибка:', error));
+                });
+            });
+        });
+    </script>
+</div>
+{% endblock %}
