@@ -2,12 +2,12 @@ import abc
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Optional, Self
+from typing import Optional, Self, TypeAlias
 
 from redis import asyncio as aioredis
 from redis.typing import EncodableT
 
-from app.types import Seconds
+Seconds: TypeAlias = int
 
 
 @dataclass(kw_only=True)
@@ -38,7 +38,7 @@ class RedisAsyncCache(BaseAsyncTTLCache):
         self.redis = aioredis.Redis(host=self.redis_host, port=self.redis_port)
         return self
 
-    async def set(self, key: str, value: EncodableT,  # noqa: WPS110
+    async def set(self, key: str, value: EncodableT,  # noqa: WPS11
                   time: Optional[Seconds | timedelta] = None) -> None:
         try:
             await self.redis.set(name=key,

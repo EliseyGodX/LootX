@@ -1,38 +1,48 @@
-from datetime import UTC, datetime
-from typing import Literal
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
-from app.config import (EMAIL_REGISTRATION_MESSAGE, JWT_ALGORITHM, JWT_KEY,
-                        REGISTRATION_TOKEN_EXP, )
-from app.db.models import User, ulid
-from app.tokens import TokenPayload, TokenType
-from app.types import RegistrationToken
+from app.db.base import DatabaseError
+from app.db.crud import (UniqueEmailError, UniqueUsernameError, create_user,
+                         is_user_username_email_unique)
+from app.tokens import RegistrationTokenPayload
+from app.types import RegistrationToken, Username
 
 
 class AuthService:
 
     @staticmethod
-    async def registration(username: str, email: str,
-                           password: str) -> RegistrationToken:
+    async def check_user_uniqueness(username: str, email: str) -> None:
+        try:
+            await is_user_username_email_unique(username, email)
+        except (UniqueUsernameError, UniqueEmailError) as e:
+            raise e
+        except Exception as e:
+            raise DatabaseError from e
 
-        user_id = ulid()
-
-        sa_user = User(
-            id=user_id,
-            username=username,
-            email=email,
-            is_active=False
-        ).set_password(password)
-
-        user_reg_token = TokenPayload[Literal[TokenType.REGISTRATION]](
-            type=TokenType.REGISTRATION,
-            sub=user_id,
-            exp=int((datetime.now(UTC) + REGISTRATION_TOKEN_EXP).timestamp()),
+    @staticmethod
+    def get_registration_token(username: Username, jwt_algorithm: str,
+                               jwt_key: str, token_exp: timedelta
+                               ) -> RegistrationToken:
+        registration_token_payload = RegistrationTokenPayload(
+            sub=username,
+            exp=int((datetime.now(UTC) + token_exp).timestamp()),
         )
-
         return jwt.encode(
-            user_reg_token.model_dump(),
-            key=JWT_KEY,
-            algorithm=JWT_ALGORITHM
+            registration_token_payload.model_dump(),
+            algorithm=jwt_algorithm,
+            key=jwt_key
         )
+
+    @staticmethod
+    async def registation(username: str, email: str,
+                          password: str) -> None:
+        try:
+            await create_user(
+                username=username,
+                password=password,
+                email=email,
+                is_active=False
+            )
+        except Exception as e:
+            raise DatabaseError from e

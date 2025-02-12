@@ -50,6 +50,7 @@ required-plugins = [
     "mccabe",
     "pycodestyle",
     "pyflakes",
+    "flake8-in-file-ignores",
 ]
 
 ignore = [
@@ -71,7 +72,16 @@ ignore = [
     "ANN101",
     "ANN102",
     "WPS111",
+    "WPS214",
     "WPS229",
+    "WPS602",
+    "WPS604",
+    "WPS430",
+    "WPS231",
+    "WPS232",
+    "WPS238",
+    "WPS211",
+    "WPS336"
 ]
 
 select = ["ANN", "B", "C", "D", "E", "F", "I", "T4", "W"]
