@@ -7,13 +7,13 @@ from litestar.handlers import get, post
 from litestar.response import Template
 
 from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
-                        JWT_ALGORITHM, JWT_KEY, REGISTRATION_TOKEN_EXP,
-                        Language)
+                        REGISTRATION_TOKEN_EXP, AuthConfig, DataBase, Language,
+                        Mailer, TaskManager, Token, TokenConfigType)
+from app.db.exc import UniqueEmailError, UniqueUsernameError
 from app.dto import RequestRegistrationPostDTO
 from app.error_codes import ErrorCodes
-from app.mail import NonExistentEmail
-from app.services import AuthService, UniqueEmailError, UniqueUsernameError
-from app.types import Mailer
+from app.mailers.base import NonExistentEmail
+from app.services import AuthService
 
 
 class AuthController(Controller):
@@ -25,11 +25,14 @@ class AuthController(Controller):
 
     @post('/registration')
     async def registration_post(
-        self, mailer: Mailer, lang: Language,
+        self, db: DataBase, mailer: Mailer, lang: Language,
+        token_type: type[Token], token_config: TokenConfigType,
+        task_manager: TaskManager,
         data: RequestRegistrationPostDTO,
     ) -> None:
         try:
             await self.auth_service.check_user_uniqueness(
+                db=db,
                 username=data.username,
                 email=data.email
             )
@@ -46,8 +49,8 @@ class AuthController(Controller):
 
         registration_token = self.auth_service.get_registration_token(
             username=data.username,
-            jwt_algorithm=JWT_ALGORITHM,
-            jwt_key=JWT_KEY,
+            token_type=token_type,
+            token_config=token_config,
             token_exp=REGISTRATION_TOKEN_EXP
         )
 
@@ -64,7 +67,10 @@ class AuthController(Controller):
             )
 
         await self.auth_service.registation(
+            db=db,
             username=data.username,
             email=data.email,
-            password=data.password
+            password=data.password,
+            task_manager=task_manager,
+            del_inactive_user_after=AuthConfig.del_inactive_user_after
         )

@@ -1,16 +1,16 @@
 # flake8-in-file-ignores: noqa: WPS432, WPS202, WPS226, WPS110
 
-from enum import Enum
+from datetime import datetime
 
 from passlib.context import CryptContext
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from ulid import ULID
 
-from app.db.base import Base
+from app.db.enums import EnumAddons, EnumClasses
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -22,28 +22,8 @@ def ulid() -> str:
 class PasswordHashingError(Exception): ...
 
 
-class EnumClasses(Enum):
-    warrior = 'warrior'
-    paladin = 'paladin'
-    hunter = 'hunter'
-    rogue = 'rogue'
-    priest = 'priest'
-    shaman = 'shaman'
-    mage = 'mage'
-    warlock = 'warlock'
-    monk = 'monk'
-    druid = 'druid'
-    demon_hunter = 'demon-hunter'
-    death_knight = 'death-knight'
-    evoker = 'evoker'
-
-
-class EnumAddons(Enum):
-    retail = 'retail'
-    classic = 'classic'
-    cata = 'cata'
-    tbc = 'tbc'
-    wotlk = 'wotlk'
+class Base(DeclarativeBase):
+    pass
 
 
 class ModelWithPassword(Base):
@@ -94,6 +74,7 @@ class User(ModelWithPassword):
 
 class Team(ModelWithPassword):
     __tablename__ = 'teams'
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     name: Mapped[str] = mapped_column(
         String(24), unique=True, nullable=False, index=True
@@ -102,7 +83,7 @@ class Team(ModelWithPassword):
         SAEnum(EnumAddons, name='addons'), nullable=False
     )
     is_vip: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    vip_end: Mapped[DateTime | None] = mapped_column(DateTime, default=None)
+    vip_end: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     owner_id: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
     owner: Mapped['User'] = relationship(back_populates='teams')
     raiders: Mapped[list['Raider']] = relationship(back_populates='team')
@@ -112,6 +93,7 @@ class Team(ModelWithPassword):
 
 class Raider(Base):
     __tablename__ = 'raiders'
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     name: Mapped[str] = mapped_column(String(12), nullable=False)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
@@ -124,6 +106,7 @@ class Raider(Base):
 
 class Item(Base):
     __tablename__ = 'items'
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     wow_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     html_tooltip: Mapped[str] = mapped_column(String, nullable=False)
@@ -134,6 +117,7 @@ class Item(Base):
 
 class Queue(Base):
     __tablename__ = 'queues'
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
@@ -146,6 +130,7 @@ class Queue(Base):
 
 class Log(Base):
     __tablename__ = 'logs'
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
     team: Mapped['Team'] = relationship(back_populates='logs')

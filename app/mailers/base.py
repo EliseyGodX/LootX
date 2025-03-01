@@ -1,60 +1,61 @@
-import abc
-import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Self
+from typing import Generic, Self, TypeVar
 
 import aiosmtplib
+
+from app.mailers.configs import BaseMailerConfig, SMTPConfig
 
 
 class MailerError(Exception): ...
 class NonExistentEmail(MailerError): ...
 
 
-@dataclass(kw_only=True)
-class BaseAsyncMailer(abc.ABC):
-    self_email: str
-    service_name: str
-    logger: logging.Logger
+MailerConfig = TypeVar('MailerConfig', bound=BaseMailerConfig)
 
-    @abc.abstractmethod
+
+@dataclass
+class BaseAsyncMailer(ABC, Generic[MailerConfig]):
+    config: MailerConfig
+
+    @abstractmethod
     async def connect(self) -> Self: ...
 
-    @abc.abstractmethod
+    @abstractmethod
     async def send(self, subject: str, body: str,
                    to_email: str) -> None: ...
 
-    @abc.abstractmethod
+    @abstractmethod
     async def close(self) -> None: ...
 
 
-@dataclass(kw_only=True)
-class AsyncSMTPMailer(BaseAsyncMailer):
-    smtp_server: str
-    smtp_user: str
-    smtp_password: str
-    smtp_port: int = 587
+@dataclass
+class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
 
     async def connect(self) -> Self:
         try:
             self.smtp_session = aiosmtplib.SMTP(
-                hostname=self.smtp_server,
-                port=self.smtp_port,
-                username=self.smtp_user,
-                password=self.smtp_password,
+                hostname=self.config.smtp_server,
+                port=self.config.smtp_port,
+                username=self.config.smtp_user,
+                password=self.config.smtp_password,
                 use_tls=False
             )
             await self.smtp_session.connect()
             await self.smtp_session.noop()
+
         except Exception as e:
-            self.logger.warning(e)
+            self.config.logger.warning(e)
+            raise e
+
         return self
 
     async def send(self, subject: str, body: str, to_email: str) -> None:
         try:
             msg = MIMEMultipart()
-            msg['From'] = self.self_email
+            msg['From'] = self.config.self_email
             msg['To'] = to_email
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'plain'))
@@ -64,7 +65,7 @@ class AsyncSMTPMailer(BaseAsyncMailer):
             raise NonExistentEmail from e
 
         except Exception as e:
-            self.logger.warning(e)
+            self.config.logger.warning(e)
             raise e
 
     async def close(self) -> None:
