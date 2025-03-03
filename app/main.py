@@ -16,7 +16,7 @@ from app.caches.base import BaseAsyncTTLCache
 from app.config import (APP_PATH, TEMPLATE_CONFIG, Cache, CacheConfig,
                         DataBase, DataBaseConfig, Mailer, MailerConfig,
                         TaskManager, TaskManagerConfig, Token, TokenConfig)
-from app.controllers import AuthController
+from app.handlers.auth.controllers import AuthController
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.dependencies import get_language

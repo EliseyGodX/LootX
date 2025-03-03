@@ -11,9 +11,10 @@ from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
                         AuthConfig, DataBase, Language, Mailer, TaskManager,
                         Token, TokenConfigType)
 from app.db.exc import ActivateUserError, UniqueEmailError, UniqueUsernameError
-from app.dto import RequestRegistrationPostDTO, ResponseAccessRefreshTokensDTO
+from app.handlers.auth.dto import (RequestRegistrationPostDTO,
+                                   ResponseAccessRefreshTokensDTO)
+from app.handlers.auth.services import AuthService
 from app.mailers.base import NonExistentEmail
-from app.services import AuthService
 from app.tokens.base import DecodeTokenError
 from app.tokens.payloads import RegistrationTokenPayload
 
@@ -97,7 +98,7 @@ class AuthController(Controller):
 
         except DecodeTokenError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_403_FORBIDDEN,
                 extra=error_code.registration_token_invalid
             )
 
