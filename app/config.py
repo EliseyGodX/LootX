@@ -63,8 +63,6 @@ CELERY_BROKER_URL: str = os.getenv(
     'CELERY_BROKER_URL'
 )  # type: ignore[reportArgumentType]
 
-REGISTRATION_TOKEN_EXP = timedelta(minutes=5)
-
 TEMPLATE_CONFIG: Mapping[str, Any] = MappingProxyType({
     'directory': APP_PATH / 'templates',
     'engine': JinjaTemplateEngine
@@ -125,4 +123,9 @@ class AuthConfig:
     email_max_length: int = 256
     password_min_length: int = 5
     password_max_length: int = 24
+
+    registration_token_exp: timedelta = timedelta(minutes=5)
+    access_token_exp: timedelta = timedelta(days=2)
+    refresh_token_exp: timedelta = timedelta(days=2, hours=12)  # noqa: WPS432
+
     del_inactive_user_after: timedelta = timedelta(minutes=5)

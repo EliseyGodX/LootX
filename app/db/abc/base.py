@@ -4,7 +4,7 @@ from typing import Generic, Literal, TypeVar
 
 from app.db.abc.configs import BaseDBConfig
 from app.db.abc.models import UserProtocol
-from app.types import Sentinel, UserId
+from app.types import Sentinel, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
 
@@ -30,6 +30,9 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
 
     @abstractmethod
     async def is_user_active(self, id: UserId) -> bool: ...
+
+    @abstractmethod
+    async def activate_user(self, username: Username) -> UserId: ...
 
     @abstractmethod
     async def close(self) -> None: ...

@@ -1,15 +1,8 @@
-from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel
 
 from app.types import UserId, Username
-
-
-class TokenType(Enum):
-    access = 'ACCESS'
-    refresh = 'REFRESH'
-    registration = 'REGISTRATION'
 
 
 class BaseTokenPayload(BaseModel):
@@ -21,18 +14,18 @@ class BaseTokenPayload(BaseModel):
 
 
 class AccessTokenPayload(BaseTokenPayload):
-    exp: int
-    type: Literal[TokenType.access] = TokenType.access
+    exp: float
     sub: UserId
+    type: Literal['access'] = 'access'
 
 
 class RefreshTokenPayload(BaseTokenPayload):
-    exp: int
-    type: Literal[TokenType.refresh] = TokenType.refresh
+    exp: float
     sub: UserId
+    type: Literal['refresh'] = 'refresh'
 
 
 class RegistrationTokenPayload(BaseTokenPayload):
-    exp: int
-    type: Literal[TokenType.registration] = TokenType.registration
+    exp: float
     sub: Username
+    type: Literal['registration'] = 'registration'

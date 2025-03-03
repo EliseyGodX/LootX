@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 
 from app.db.abc.base import BaseAsyncDB
-from app.db.exc import UniqueEmailError, UniqueUsernameError
+from app.db.exc import ActivateUserError, UniqueEmailError, UniqueUsernameError
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
 from app.db.sqlalchemy.models import Base, User, ulid
-from app.types import Sentinel, UserId
+from app.types import Sentinel, UserId, Username
 
 
 class DatabaseWriteError(Exception): ...
@@ -103,6 +103,20 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 return user.is_active
             else:
                 raise ValueError(f"User with id {id} does not exist")
+
+    async def activate_user(self, username: Username) -> UserId:
+        async with self.get_write_session() as session:
+            query_result = await session.execute(
+                select(User).where(User.username == username)
+            )
+            user = query_result.scalar_one_or_none()
+            if user:
+                if not user.is_active:
+                    raise ActivateUserError(f'User with username {username} is active')
+                user.is_active = True
+                return user.id
+            else:
+                raise ValueError(f"User with username {username} does not exist")
 
     async def close(self) -> None:
         await self.engine.dispose()

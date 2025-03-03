@@ -14,6 +14,7 @@ class DecodeTokenError(TokenError): ...
 
 
 TokenConfig = TypeVar('TokenConfig', bound=BaseTokenConfig)
+PayloadType = TypeVar('PayloadType', bound=BaseTokenPayload)
 
 
 @dataclass
@@ -26,9 +27,11 @@ class BaseToken(ABC, Generic[TokenConfig]):
 
     @classmethod
     @abstractmethod
-    def decode(cls, token: str, config: TokenConfig) -> Self: ...
+    def decode(cls, token: str, config: TokenConfig,
+               payload_type: type[PayloadType]) -> Self: ...
 
 
+@dataclass
 class JWToken(BaseToken[JWTokenConfig]):
 
     def encode(self) -> str:
@@ -48,9 +51,10 @@ class JWToken(BaseToken[JWTokenConfig]):
             raise EncodeTokenError from e
 
     @classmethod
-    def decode(cls, token: str, config: JWTokenConfig) -> Self:
+    def decode(cls, token: str, config: JWTokenConfig,
+               payload_type: type[PayloadType]) -> Self:
         try:
-            token_payload = BaseTokenPayload(
+            token_payload = payload_type(
                 **jwt.decode(
                     jwt=token,
                     key=config.key,
@@ -59,7 +63,7 @@ class JWToken(BaseToken[JWTokenConfig]):
             )
             return cls(
                 payload=token_payload,
-                **config.model_dump()
+                config=config
             )
         except Exception as e:
             raise DecodeTokenError from e

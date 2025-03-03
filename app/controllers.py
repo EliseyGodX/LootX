@@ -6,18 +6,21 @@ from litestar.exceptions import HTTPException
 from litestar.handlers import get, post
 from litestar.response import Template
 
+from app import error_codes as error_code
 from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
-                        REGISTRATION_TOKEN_EXP, AuthConfig, DataBase, Language,
-                        Mailer, TaskManager, Token, TokenConfigType)
-from app.db.exc import UniqueEmailError, UniqueUsernameError
-from app.dto import RequestRegistrationPostDTO
-from app.error_codes import ErrorCodes
+                        AuthConfig, DataBase, Language, Mailer, TaskManager,
+                        Token, TokenConfigType)
+from app.db.exc import ActivateUserError, UniqueEmailError, UniqueUsernameError
+from app.dto import RequestRegistrationPostDTO, ResponseAccessRefreshTokensDTO
 from app.mailers.base import NonExistentEmail
 from app.services import AuthService
+from app.tokens.base import DecodeTokenError
+from app.tokens.payloads import RegistrationTokenPayload
 
 
 class AuthController(Controller):
-    auth_service = AuthService()
+    service = AuthService()
+    config = AuthConfig()
 
     @get('/registration')
     async def registration_get(self) -> Template:
@@ -31,7 +34,7 @@ class AuthController(Controller):
         data: RequestRegistrationPostDTO,
     ) -> None:
         try:
-            await self.auth_service.check_user_uniqueness(
+            await self.service.check_user_uniqueness(
                 db=db,
                 username=data.username,
                 email=data.email
@@ -39,19 +42,19 @@ class AuthController(Controller):
         except UniqueUsernameError:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorCodes.UsernameNotUnique
+                extra=error_code.username_not_unique
             )
         except UniqueEmailError:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorCodes.EmailNotUnique
+                extra=error_code.email_not_unique
             )
 
-        registration_token = self.auth_service.get_registration_token(
-            username=data.username,
+        registration_token = self.service.create_registration_token(
+            sub=data.username,
             token_type=token_type,
             token_config=token_config,
-            token_exp=REGISTRATION_TOKEN_EXP
+            token_exp=self.config.registration_token_exp
         )
 
         try:
@@ -63,14 +66,67 @@ class AuthController(Controller):
         except NonExistentEmail:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=ErrorCodes.EmailNonExistent
+                extra=error_code.email_non_existent
             )
 
-        await self.auth_service.registation(
+        await self.service.registration(
             db=db,
             username=data.username,
             email=data.email,
             password=data.password,
             task_manager=task_manager,
             del_inactive_user_after=AuthConfig.del_inactive_user_after
+        )
+
+    @get('/verify-email/{registration_token:str}')
+    async def verify_email(self, db: DataBase, token_type: type[Token],
+                           token_config: TokenConfigType, registration_token: str
+                           ) -> ResponseAccessRefreshTokensDTO:
+        try:
+            encode_registration_token = (
+                await self.service.verify_registration_token(
+                    token=registration_token,
+                    token_type=token_type,
+                    token_config=token_config
+                )
+            )
+            registration_token_payload: RegistrationTokenPayload = (
+                encode_registration_token.payload
+            )  # type: ignore
+            username = registration_token_payload.sub
+
+        except DecodeTokenError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                extra=error_code.registration_token_invalid
+            )
+
+        try:
+            user_id = await self.service.activate_user(
+                db=db,
+                username=username
+            )
+        except ActivateUserError:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                extra=error_code.user_is_active
+            )
+
+        access_token = await self.service.create_access_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=user_id
+        )
+
+        refresh_token = await self.service.create_refresh_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=user_id
+        )
+
+        return ResponseAccessRefreshTokensDTO(
+            access_token=access_token.encode(),
+            refresh_token=refresh_token.encode()
         )
