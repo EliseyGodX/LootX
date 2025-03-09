@@ -1,16 +1,23 @@
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from typing import AsyncGenerator, Literal, NoReturn, Sequence
 
+from asyncpg import ForeignKeyViolationError, UniqueViolationError
 from sqlalchemy import case, delete, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
+from sqlalchemy.orm import selectinload
 
 from app.db.abc.base import BaseAsyncDB
-from app.db.exc import ActivateUserError, UniqueEmailError, UniqueUsernameError
+from app.db.abc.models import TeamProtocol
+from app.db.enums import EnumAddons
+from app.db.exc import (ActivateUserError, TeamsNotExistsError,
+                        UniqueEmailError, UniqueTeamNameError,
+                        UniqueUsernameError, UserNotExistsError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, User, ulid
+from app.db.sqlalchemy.models import Base, Team, User, ulid
 from app.types import Sentinel, UserId, Username
 
 
@@ -117,6 +124,72 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 return user.id
             else:
                 raise ValueError(f"User with username {username} does not exist")
+
+    async def create_team(self, name: str, addon: EnumAddons, vip_end: datetime | None,
+                          owner_id: str, password: str, id: str = Sentinel
+                          ) -> TeamProtocol:  # type: ignore
+        async with self.get_write_session() as session:
+            try:
+                team = Team(
+                    id=ulid() if id is Sentinel else id,
+                    name=name,
+                    addon=addon,
+                    vip_end=vip_end,
+                    owner_id=owner_id,
+                    password=password
+                )
+                session.add(team)
+                return team  # type: ignore
+
+            except IntegrityError as e:
+                if isinstance(e.orig, UniqueViolationError):
+                    raise UniqueTeamNameError(
+                        'Team with that name already exists') from e
+                elif isinstance(e.orig, ForeignKeyViolationError):
+                    raise UserNotExistsError(
+                        f'User with id {owner_id} does not exist') from e
+
+    async def del_team(self, id: str) -> None:
+        async with self.get_write_session() as session:
+            try:
+                team = await self.get_team(id=id)
+                await session.delete(team)
+            except IntegrityError as e:
+                raise TeamsNotExistsError(f"Teams with '{id}' does not exists") from e
+
+    async def get_team(self, name: str | None = Sentinel,
+                       id: str | None = Sentinel) -> TeamProtocol:
+        if name is not Sentinel:
+            condition = Team.name == name
+        elif id is not Sentinel:
+            condition = Team.id == id
+        else: raise ValueError('Must be provide at least one argument')
+
+        async with self.get_read_session() as session:
+            team = (await session.execute(
+                select(Team)
+                .options(selectinload(Team.owner))
+                .filter(condition))).scalar_one_or_none()
+            if team:
+                return team  # type: ignore
+            else:
+                raise TeamsNotExistsError(
+                    f"Team with argument {condition} does not exist")
+
+    async def update_team(self, id: str, name: str = Sentinel,
+                          addon: EnumAddons = Sentinel, is_vip: bool = Sentinel,
+                          vip_end: datetime = Sentinel, password: str = Sentinel,
+                          owner_id: str = Sentinel) -> TeamProtocol:
+        team = await self.get_team(id=id)
+        async with self.get_write_session() as session:
+            if name is not Sentinel: team.name = name  # noqa: WPS220
+            if addon is not Sentinel: team.addon = addon  # noqa: WPS220
+            if is_vip is not Sentinel: team.is_vip = is_vip  # noqa: WPS220
+            if vip_end is not Sentinel: team.vip_end = vip_end  # noqa: WPS220
+            if owner_id is not Sentinel: team.owner_id = owner_id  # noqa: WPS220
+            if password is not Sentinel: team.password = password  # noqa: WPS220
+            session.add(team)
+            return team  # type: ignore
 
     async def close(self) -> None:
         await self.engine.dispose()
