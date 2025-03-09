@@ -38,3 +38,28 @@ user_is_active = ErrorExtra(
     error_code=7,
     message='The user is already active'
 )
+
+invalid_credentials = ErrorExtra(
+    error_code=8,
+    message='Invalid credentials'
+)
+
+invalid_lang_cookie = ErrorExtra(
+    error_code=9,
+    message='Invalid language cookie'
+)
+
+authorization_header_missing = ErrorExtra(
+    error_code=10,
+    message='Authorization header missing'
+)
+
+refresh_token_cookie_missing = ErrorExtra(
+    error_code=10,
+    message='Refresh token missing in cookie'
+)
+
+update_tokens = ErrorExtra(
+    error_code=11,
+    message='New access and refresh tokens'
+)

@@ -11,6 +11,7 @@ from app.tokens.payloads import BaseTokenPayload
 class TokenError(Exception): ...
 class EncodeTokenError(TokenError): ...
 class DecodeTokenError(TokenError): ...
+class TokenExpiredError(DecodeTokenError): ...
 
 
 TokenConfig = TypeVar('TokenConfig', bound=BaseTokenConfig)
@@ -65,5 +66,9 @@ class JWToken(BaseToken[JWTokenConfig]):
                 payload=token_payload,
                 config=config
             )
+
+        except jwt.ExpiredSignatureError as e:
+            raise TokenExpiredError from e
+
         except Exception as e:
             raise DecodeTokenError from e

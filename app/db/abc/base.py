@@ -22,6 +22,9 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
                           id: UserId = Sentinel) -> UserProtocol: ...
 
     @abstractmethod
+    async def get_user(self, id: UserId) -> UserProtocol: ...
+
+    @abstractmethod
     async def del_user(self, id: UserId) -> None: ...
 
     @abstractmethod
@@ -33,6 +36,10 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
 
     @abstractmethod
     async def activate_user(self, username: Username) -> UserId: ...
+
+    @abstractmethod
+    async def verify_username_password(self, username: Username, password: str
+                                       ) -> UserId: ...
 
     @abstractmethod
     async def close(self) -> None: ...

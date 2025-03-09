@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 
 from app.db.abc.base import BaseAsyncDB
-from app.db.exc import ActivateUserError, UniqueEmailError, UniqueUsernameError
+from app.db.abc.models import UserProtocol
+from app.db.exc import (ActivateUserError, InvalidCredentialsError,
+                        UniqueEmailError, UniqueUsernameError, UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
 from app.db.sqlalchemy.models import Base, User, ulid
 from app.types import Sentinel, UserId, Username
@@ -55,9 +57,9 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 await session.rollback()
                 raise e
 
-    async def create_user(self, username: str, password: str,  # type: ignore
+    async def create_user(self, username: str, password: str,
                           email: str, is_active: bool,
-                          id: UserId = Sentinel) -> User:
+                          id: UserId = Sentinel) -> UserProtocol:
         try:
             async with self.get_write_session() as session:
                 new_user = User(
@@ -68,10 +70,17 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                     password=password
                 )
                 session.add(new_user)
-                return new_user
+                return new_user  # type: ignore
 
         except IntegrityError as e:
             self._raise_user_unique_error(e)
+
+    async def get_user(self, id: UserId) -> UserProtocol:
+        async with self.get_read_session() as session:
+            user = await session.get(User, id)
+            if not user:
+                raise UserNotFoundError('User is not found')
+            return user  # type: ignore
 
     async def del_user(self, id: UserId) -> None:
         async with self.get_write_session() as session:
@@ -117,6 +126,21 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 return user.id
             else:
                 raise ValueError(f"User with username {username} does not exist")
+
+    async def verify_username_password(self, username: Username, password: str
+                                       ) -> UserId:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(User)
+                .where(
+                    User.username == username
+                )
+            )
+            user = (await session.execute(stmt)).scalar_one_or_none()
+            if user and user.check_password(password):
+                return user.id
+            else:
+                raise InvalidCredentialsError("Invalid username or password")
 
     async def close(self) -> None:
         await self.engine.dispose()

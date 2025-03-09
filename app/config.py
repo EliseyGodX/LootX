@@ -129,3 +129,8 @@ class AuthConfig:
     refresh_token_exp: timedelta = timedelta(days=2, hours=12)  # noqa: WPS432
 
     del_inactive_user_after: timedelta = timedelta(minutes=5)
+
+
+@dataclass(frozen=True)
+class UserConfig:
+    ...

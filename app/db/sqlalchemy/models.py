@@ -97,10 +97,10 @@ class Raider(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     name: Mapped[str] = mapped_column(String(12), nullable=False)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
-    team: Mapped['Team'] = relationship(back_populates='raiders')
     class_name: Mapped[EnumClasses] = mapped_column(
         SAEnum(EnumClasses, name='classes'), nullable=False
     )
+    team: Mapped['Team'] = relationship(back_populates='raiders')
     queues: Mapped[list['Queue']] = relationship(back_populates='raider')
 
 
@@ -121,10 +121,10 @@ class Queue(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
-    team: Mapped['Team'] = relationship(back_populates='queues')
     raider_id: Mapped[str] = mapped_column(ForeignKey('raiders.id'), nullable=False)
-    raider: Mapped['Raider'] = relationship(back_populates='queues')
     item_id: Mapped[str] = mapped_column(ForeignKey('items.id'), nullable=False)
+    team: Mapped['Team'] = relationship(back_populates='queues')
+    raider: Mapped['Raider'] = relationship(back_populates='queues')
     item: Mapped['Item'] = relationship(back_populates='queues')
 
 
@@ -133,9 +133,9 @@ class Log(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=ulid)
     team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
-    team: Mapped['Team'] = relationship(back_populates='logs')
     user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
-    user: Mapped['User'] = relationship(back_populates='logs')
     item_id: Mapped[str] = mapped_column(ForeignKey('items.id'), nullable=False)
-    item: Mapped['Item'] = relationship(back_populates='logs')
     sequence: Mapped[str] = mapped_column(String)
+    team: Mapped['Team'] = relationship(back_populates='logs')
+    user: Mapped['User'] = relationship(back_populates='logs')
+    item: Mapped['Item'] = relationship(back_populates='logs')
