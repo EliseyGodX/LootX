@@ -129,3 +129,14 @@ class AuthConfig:
     refresh_token_exp: timedelta = timedelta(days=2, hours=12)  # noqa: WPS432
 
     del_inactive_user_after: timedelta = timedelta(minutes=5)
+
+
+@dataclass(frozen=True)
+class TeamsConfig:
+    team_name_min_length: int = 2
+    team_name_max_length: int = 12
+    email_max_length: int = 256
+    password_min_length: int = 5
+    password_max_length: int = 24
+
+    max_team_members: int = 5

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Generic, Literal, TypeVar
 
 from app.db.abc.configs import BaseDBConfig
-from app.db.abc.models import UserProtocol
+from app.db.abc.models import TeamProtocol, UserProtocol
+from app.db.enums import EnumAddons
 from app.types import Sentinel, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
@@ -33,6 +35,24 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
 
     @abstractmethod
     async def activate_user(self, username: Username) -> UserId: ...
+
+    @abstractmethod
+    async def create_team(self, name: str, addon: EnumAddons, vip_end: datetime | None,
+                          owner_id: str, password: str, id: str = Sentinel
+                          ) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def del_team(self, id: str) -> None: ...
+
+    @abstractmethod
+    async def get_team(self, name: str | None = Sentinel,
+                       id: str | None = Sentinel) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def update_team(self, id: str, name: str = Sentinel,
+                          addon: EnumAddons = Sentinel, is_vip: bool = Sentinel,
+                          vip_end: datetime = Sentinel, password: str = Sentinel,
+                          ) -> TeamProtocol: ...
 
     @abstractmethod
     async def close(self) -> None: ...
