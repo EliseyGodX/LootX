@@ -39,6 +39,21 @@ user_is_active = ErrorExtra(
     message='The user is already active'
 )
 
+team_name_not_unique = ErrorExtra(
+    error_code=8,
+    message='The team name is already active'
+)
+
+team_not_exists = ErrorExtra(
+    error_code=9,
+    message='The team does not exist'
+)
+
+user_not_exists = ErrorExtra(
+    error_code=10,
+    message='Username does not exist'
+)
+
 invalid_credentials = ErrorExtra(
     error_code=8,
     message='Invalid credentials'
