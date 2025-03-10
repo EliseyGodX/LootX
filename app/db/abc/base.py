@@ -3,12 +3,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Generic, Literal, TypeVar
 
+from ulid import ULID
+
 from app.db.abc.configs import BaseDBConfig
 from app.db.abc.models import TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
 from app.types import Sentinel, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
+
+
+def get_id() -> str:
+    return str(ULID())
 
 
 @dataclass
@@ -22,6 +28,9 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def create_user(self, username: str, password: str,
                           email: str, is_active: bool,
                           id: UserId = Sentinel) -> UserProtocol: ...
+
+    @abstractmethod
+    async def get_user(self, id: UserId) -> UserProtocol: ...
 
     @abstractmethod
     async def del_user(self, id: UserId) -> None: ...
@@ -53,6 +62,10 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
                           addon: EnumAddons = Sentinel, is_vip: bool = Sentinel,
                           vip_end: datetime = Sentinel, password: str = Sentinel,
                           ) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def verify_username_password(self, username: Username, password: str
+                                       ) -> UserId: ...
 
     @abstractmethod
     async def close(self) -> None: ...

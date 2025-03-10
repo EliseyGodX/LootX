@@ -1,3 +1,4 @@
+# flake8-in-file-ignores: noqa: WPS432
 
 class ErrorExtra(dict):  # noqa: WPS600
     error_code: int
@@ -52,4 +53,29 @@ team_not_exists = ErrorExtra(
 user_not_exists = ErrorExtra(
     error_code=10,
     message='Username does not exist'
+)
+
+invalid_credentials = ErrorExtra(
+    error_code=11,
+    message='Invalid credentials'
+)
+
+invalid_lang_cookie = ErrorExtra(
+    error_code=12,
+    message='Invalid language cookie'
+)
+
+authorization_header_missing = ErrorExtra(
+    error_code=13,
+    message='Authorization header missing'
+)
+
+refresh_token_cookie_missing = ErrorExtra(
+    error_code=14,
+    message='Refresh token missing in cookie'
+)
+
+update_tokens = ErrorExtra(
+    error_code=15,
+    message='New access and refresh tokens'
 )

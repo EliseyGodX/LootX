@@ -140,3 +140,8 @@ class TeamsConfig:
     password_max_length: int = 24
 
     max_team_members: int = 5
+
+
+@dataclass(frozen=True)
+class UserConfig:
+    ...

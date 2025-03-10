@@ -4,7 +4,7 @@ from typing import TypeVar
 from app.config import Token, TokenConfigType
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import (ActivateUserError, DatabaseError, UniqueEmailError,
-                        UniqueUsernameError)
+                        UniqueUsernameError, InvalidCredentialsError)
 from app.task_managers.base import BaseAsyncTaskManager, TaskManagerError
 from app.tokens.base import BaseToken, DecodeTokenError, EncodeTokenError
 from app.tokens.payloads import (AccessTokenPayload, RefreshTokenPayload,
@@ -65,6 +65,27 @@ class AuthService:
             raise TaskManagerError from e
 
     @staticmethod
+    async def verify_access_token(token: str, token_type: type[TokenType],
+                                  token_config: TokenConfigType
+                                  ) -> TokenType:
+        try:
+            return token_type.decode(
+                token, token_config, AccessTokenPayload
+            )
+        except DecodeTokenError as e:
+            raise e
+
+    @staticmethod
+    async def verify_refresh_token(token: str, token_type: type[TokenType],
+                                   token_config: TokenConfigType) -> TokenType:
+        try:
+            return token_type.decode(
+                token, token_config, RefreshTokenPayload
+            )
+        except DecodeTokenError as e:
+            raise e
+
+    @staticmethod
     async def verify_registration_token(token: str, token_type: type[TokenType],
                                         token_config: TokenConfigType
                                         ) -> TokenType:
@@ -115,3 +136,16 @@ class AuthService:
             )
         except EncodeTokenError as e:
             raise e
+
+    @staticmethod
+    async def verify_username_password(db: BaseAsyncDB, username: Username,
+                                       password: str) -> UserId:
+        try:
+            return await db.verify_username_password(
+                username=username,
+                password=password
+            )
+        except InvalidCredentialsError as e:
+            raise e
+        except Exception as e:
+            raise DatabaseError from e

@@ -10,14 +10,15 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import selectinload
 
-from app.db.abc.base import BaseAsyncDB
-from app.db.abc.models import TeamProtocol
+from app.db.abc.base import BaseAsyncDB, get_id
+from app.db.abc.models import TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
-from app.db.exc import (ActivateUserError, TeamsNotExistsError,
-                        UniqueEmailError, UniqueTeamNameError,
-                        UniqueUsernameError, UserNotExistsError)
+from app.db.exc import (ActivateUserError, InvalidCredentialsError,
+                        TeamsNotExistsError, UniqueEmailError,
+                        UniqueTeamNameError, UniqueUsernameError,
+                        UserNotExistsError, UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Team, User, ulid
+from app.db.sqlalchemy.models import Base, Team, User
 from app.types import Sentinel, UserId, Username
 
 
@@ -62,23 +63,30 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 await session.rollback()
                 raise e
 
-    async def create_user(self, username: str, password: str,  # type: ignore
+    async def create_user(self, username: str, password: str,
                           email: str, is_active: bool,
-                          id: UserId = Sentinel) -> User:
+                          id: UserId = Sentinel) -> UserProtocol:
         try:
             async with self.get_write_session() as session:
                 new_user = User(
-                    id=ulid() if id is Sentinel else id,
+                    id=get_id() if id is Sentinel else id,
                     username=username,
                     email=email,
                     is_active=is_active,
                     password=password
                 )
                 session.add(new_user)
-                return new_user
+                return new_user  # type: ignore
 
         except IntegrityError as e:
             self._raise_user_unique_error(e)
+
+    async def get_user(self, id: UserId) -> UserProtocol:
+        async with self.get_read_session() as session:
+            user = await session.get(User, id)
+            if not user:
+                raise UserNotFoundError('User is not found')
+            return user  # type: ignore
 
     async def del_user(self, id: UserId) -> None:
         async with self.get_write_session() as session:
@@ -131,7 +139,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
         async with self.get_write_session() as session:
             try:
                 team = Team(
-                    id=ulid() if id is Sentinel else id,
+                    id=get_id() if id is Sentinel else id,
                     name=name,
                     addon=addon,
                     vip_end=vip_end,
@@ -190,6 +198,21 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             if password is not Sentinel: team.password = password  # noqa: WPS220
             session.add(team)
             return team  # type: ignore
+
+    async def verify_username_password(self, username: Username, password: str
+                                       ) -> UserId:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(User)
+                .where(
+                    User.username == username
+                )
+            )
+            user = (await session.execute(stmt)).scalar_one_or_none()
+            if user and user.check_password(password):
+                return user.id
+            else:
+                raise InvalidCredentialsError("Invalid username or password")
 
     async def close(self) -> None:
         await self.engine.dispose()
