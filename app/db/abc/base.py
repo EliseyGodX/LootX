@@ -3,12 +3,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Generic, Literal, TypeVar
 
+from ulid import ULID
+
 from app.db.abc.configs import BaseDBConfig
 from app.db.abc.models import TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
 from app.types import Sentinel, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
+
+
+def get_id() -> str:
+    return str(ULID())
 
 
 @dataclass

@@ -19,11 +19,9 @@ from app.config import (APP_PATH, TEMPLATE_CONFIG, Cache, CacheConfig,
                         TaskManager, TaskManagerConfig, Token, TokenConfig)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
-from app.dependencies import get_language
-from app.handlers.auth.controllers import AuthController
-from app.handlers.teams.controllers import TeamsController
 from app.dependencies import auth_client, get_language
 from app.handlers.auth.controller import AuthController
+from app.handlers.teams.controllers import TeamsController
 from app.handlers.user.controller import UserController
 from app.mailers.base import BaseAsyncMailer, MailerError
 from app.task_managers.base import BaseAsyncTaskManager, Tasks
@@ -110,13 +108,12 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 
 app = Litestar(
-    route_handlers=[index, AuthController, TeamsController],
+    route_handlers=[index, AuthController, TeamsController, UserController],
     openapi_config=OpenAPIConfig(
         title='LootX API',
         version='1.0.0',
         description='API for managing loot boxes and team management',
     ),
-    route_handlers=[index, AuthController, UserController],
     template_config=TemplateConfig(**TEMPLATE_CONFIG),
     debug=True,
     static_files_config=[

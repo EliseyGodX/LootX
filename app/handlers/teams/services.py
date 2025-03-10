@@ -4,7 +4,7 @@ from app.db.abc.base import BaseAsyncDB
 from app.db.abc.models import TeamProtocol
 from app.db.enums import EnumAddons
 from app.db.exc import DatabaseError, TeamsNotExistsError
-from app.db.sqlalchemy.models import ulid
+from app.db.sqlalchemy.models import get_id
 from app.types import Sentinel
 
 
@@ -24,7 +24,7 @@ class TeamsService:
                           password: str, id: str = Sentinel) -> TeamProtocol:
         try:
             team = await db.create_team(
-                id=ulid() if id is Sentinel else id,
+                id=get_id() if id is Sentinel else id,
                 name=name,
                 addon=addon,
                 vip_end=None,

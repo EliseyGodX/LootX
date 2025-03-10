@@ -10,20 +10,15 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import selectinload
 
-from app.db.abc.base import BaseAsyncDB
-<<<<<<< HEAD
-from app.db.abc.models import UserProtocol
-from app.db.exc import (ActivateUserError, InvalidCredentialsError,
-                        UniqueEmailError, UniqueUsernameError, UserNotFoundError)
-=======
-from app.db.abc.models import TeamProtocol
+from app.db.abc.base import BaseAsyncDB, get_id
+from app.db.abc.models import TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
-from app.db.exc import (ActivateUserError, TeamsNotExistsError,
-                        UniqueEmailError, UniqueTeamNameError,
-                        UniqueUsernameError, UserNotExistsError)
->>>>>>> 8723749d987bde2233e74abbc6d1a4bc331a2296
+from app.db.exc import (ActivateUserError, InvalidCredentialsError,
+                        TeamsNotExistsError, UniqueEmailError,
+                        UniqueTeamNameError, UniqueUsernameError,
+                        UserNotExistsError, UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Team, User, ulid
+from app.db.sqlalchemy.models import Base, Team, User
 from app.types import Sentinel, UserId, Username
 
 
@@ -74,7 +69,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
         try:
             async with self.get_write_session() as session:
                 new_user = User(
-                    id=ulid() if id is Sentinel else id,
+                    id=get_id() if id is Sentinel else id,
                     username=username,
                     email=email,
                     is_active=is_active,
@@ -138,29 +133,13 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             else:
                 raise ValueError(f"User with username {username} does not exist")
 
-<<<<<<< HEAD
-    async def verify_username_password(self, username: Username, password: str
-                                       ) -> UserId:
-        async with self.get_read_session() as session:
-            stmt = (
-                select(User)
-                .where(
-                    User.username == username
-                )
-            )
-            user = (await session.execute(stmt)).scalar_one_or_none()
-            if user and user.check_password(password):
-                return user.id
-            else:
-                raise InvalidCredentialsError("Invalid username or password")
-=======
     async def create_team(self, name: str, addon: EnumAddons, vip_end: datetime | None,
                           owner_id: str, password: str, id: str = Sentinel
                           ) -> TeamProtocol:  # type: ignore
         async with self.get_write_session() as session:
             try:
                 team = Team(
-                    id=ulid() if id is Sentinel else id,
+                    id=get_id() if id is Sentinel else id,
                     name=name,
                     addon=addon,
                     vip_end=vip_end,
@@ -219,7 +198,21 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             if password is not Sentinel: team.password = password  # noqa: WPS220
             session.add(team)
             return team  # type: ignore
->>>>>>> 8723749d987bde2233e74abbc6d1a4bc331a2296
+
+    async def verify_username_password(self, username: Username, password: str
+                                       ) -> UserId:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(User)
+                .where(
+                    User.username == username
+                )
+            )
+            user = (await session.execute(stmt)).scalar_one_or_none()
+            if user and user.check_password(password):
+                return user.id
+            else:
+                raise InvalidCredentialsError("Invalid username or password")
 
     async def close(self) -> None:
         await self.engine.dispose()
