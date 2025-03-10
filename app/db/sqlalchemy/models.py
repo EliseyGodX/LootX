@@ -26,7 +26,7 @@ class ModelWithPassword(Base):
     __abstract__ = True
 
     _password: Mapped[str] = mapped_column(
-        String(60), nullable=False, name='password'
+        String(24), nullable=False, name='password'
     )
 
     def __init__(self, is_password_hash_check_enabled: bool = True, **kwargs) -> None:

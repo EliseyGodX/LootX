@@ -132,14 +132,11 @@ class AuthConfig:
 
 
 @dataclass(frozen=True)
-class TeamsConfig:
-    team_name_min_length: int = 2
-    team_name_max_length: int = 12
-    email_max_length: int = 256
+class TeamConfig:
+    name_min_length: int = 2
+    name_max_length: int = 24
     password_min_length: int = 5
     password_max_length: int = 24
-
-    max_team_members: int = 5
 
 
 @dataclass(frozen=True)

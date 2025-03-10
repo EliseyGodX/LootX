@@ -25,9 +25,10 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def connect(self) -> None: ...
 
     @abstractmethod
-    async def create_user(self, username: str, password: str,
-                          email: str, is_active: bool,
-                          id: UserId = Sentinel) -> UserProtocol: ...
+    async def create_user(
+        self, username: str, password: str, email: str, is_active: bool,
+        id: UserId = Sentinel
+    ) -> UserProtocol: ...
 
     @abstractmethod
     async def get_user(self, id: UserId) -> UserProtocol: ...
@@ -36,8 +37,9 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def del_user(self, id: UserId) -> None: ...
 
     @abstractmethod
-    async def is_user_username_email_unique(self, username: str, email: str
-                                            ) -> Literal[True]: ...
+    async def is_user_username_email_unique(
+        self, username: str, email: str
+    ) -> Literal[True]: ...
 
     @abstractmethod
     async def is_user_active(self, id: UserId) -> bool: ...
@@ -46,26 +48,30 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def activate_user(self, username: Username) -> UserId: ...
 
     @abstractmethod
-    async def create_team(self, name: str, addon: EnumAddons, vip_end: datetime | None,
-                          owner_id: str, password: str, id: str = Sentinel
-                          ) -> TeamProtocol: ...
+    async def create_team(
+        self, name: str, addon: EnumAddons, owner_id: str, password: str,
+        id: str = Sentinel, vip_end: datetime | None = None, is_vip: bool | None = None
+    ) -> TeamProtocol: ...
 
     @abstractmethod
     async def del_team(self, id: str) -> None: ...
 
     @abstractmethod
-    async def get_team(self, name: str | None = Sentinel,
-                       id: str | None = Sentinel) -> TeamProtocol: ...
+    async def get_team_by_name(self, name: str) -> TeamProtocol: ...
 
     @abstractmethod
-    async def update_team(self, id: str, name: str = Sentinel,
-                          addon: EnumAddons = Sentinel, is_vip: bool = Sentinel,
-                          vip_end: datetime = Sentinel, password: str = Sentinel,
-                          ) -> TeamProtocol: ...
+    async def get_team(self, id: str) -> TeamProtocol: ...
 
     @abstractmethod
-    async def verify_username_password(self, username: Username, password: str
-                                       ) -> UserId: ...
+    async def update_team(
+        self, id: str, name: str = Sentinel, addon: EnumAddons = Sentinel,
+        is_vip: bool = Sentinel, vip_end: datetime = Sentinel, password: str = Sentinel,
+    ) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def verify_username_password(
+        self, username: Username, password: str
+    ) -> UserId: ...
 
     @abstractmethod
     async def close(self) -> None: ...

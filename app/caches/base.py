@@ -19,8 +19,10 @@ class BaseAsyncTTLCache(ABC, Generic[CacheConfig]):
     async def connect(self) -> Self: ...
 
     @abstractmethod
-    async def set(self, key: str, value: str,  # noqa: WPS110
-                  time: Optional[Seconds | timedelta] = None) -> None: ...
+    async def set(
+        self, key: str, value: str,  # noqa: WPS110
+        time: Optional[Seconds | timedelta] = None
+    ) -> None: ...
 
     @abstractmethod
     async def get(self, key: str) -> bytes | None: ...
@@ -39,8 +41,10 @@ class RedisAsyncCache(BaseAsyncTTLCache[RedisConfig]):
         )
         return self
 
-    async def set(self, key: str, value: str,  # noqa: WPS11
-                  time: Optional[Seconds | timedelta] = None) -> None:
+    async def set(
+        self, key: str, value: str,  # noqa: WPS110
+        time: Optional[Seconds | timedelta] = None
+    ) -> None:
         try:
             await self.redis.set(
                 name=key,

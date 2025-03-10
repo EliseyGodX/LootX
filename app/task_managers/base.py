@@ -29,8 +29,9 @@ class BaseAsyncTaskManager(ABC, Generic[TaskManagerConfig]):
     async def connect(self) -> Self: ...
 
     @abstractmethod
-    async def del_inactive_user(self, user_id: UserId,
-                                eta_delta: timedelta) -> None: ...
+    async def del_inactive_user(
+        self, user_id: UserId, eta_delta: timedelta
+    ) -> None: ...
 
     @abstractmethod
     async def close(self) -> None: ...
@@ -61,8 +62,9 @@ class KapustaTaskManager(BaseAsyncTaskManager[KapustaConfig]):
 
         return self
 
-    async def del_inactive_user(self, user_id: UserId,
-                                eta_delta: timedelta) -> None:
+    async def del_inactive_user(
+        self, user_id: UserId, eta_delta: timedelta
+    ) -> None:
         update_params = {'eta_delta': eta_delta} if eta_delta else {}
         await self.kapusta_tasks[self.tasks.del_inactive_user].launch(
             update_params=update_params,

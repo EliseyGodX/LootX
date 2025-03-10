@@ -7,23 +7,23 @@ from litestar.handlers import delete, get, patch, post
 from litestar.response import Redirect, Template
 
 from app import error_codes as error_code
-from app.config import DataBase, TeamsConfig
+from app.config import DataBase, TeamConfig
 from app.db.exc import (TeamsAlreadyExistsError, TeamsNotExistsError,
                         UserNotExistsError)
-from app.handlers.teams.dto import (RequestCreateTeamDTO, RequestUpdateTeamDTO,
-                                    ResponseTeamDTO)
-from app.handlers.teams.services import TeamsService
+from app.handlers.team.dto import (RequestCreateTeamDTO, RequestUpdateTeamDTO,
+                                   ResponseTeamDTO)
+from app.handlers.team.services import TeamService
 from app.types import Sentinel
 
 
-class TeamsController(Controller):
-    service = TeamsService()
-    config = TeamsConfig()
+class TeamController(Controller):
+    service = TeamService()
+    config = TeamConfig()
 
     @get('/team/{name:str}')
     async def team_get_by_name(self, db: DataBase, name: str) -> Template:
         try:
-            team = await self.service.get_team_by_name_or_id(db=db, name=name)
+            team = await self.service.get_team_by_name(db=db, name=name)
             return Template(template_name='team.html', context={"team": team})
         except TeamsNotExistsError:
             raise HTTPException(
@@ -43,7 +43,7 @@ class TeamsController(Controller):
                 name=data.name,
                 addon=data.addon,
                 password=data.password,
-                owner_id='01JNM3EWM6K1SGRY0Q8ZEECK3A'
+                owner_id='01JP02S1TDQ2R48TE3D6QZJCH7'
             )
 
             return Redirect('/')
@@ -73,8 +73,9 @@ class TeamsController(Controller):
             )
 
     @patch('/team/{team_id:str}')
-    async def update_team(self, db: DataBase,
-                          team_id: str, data: RequestUpdateTeamDTO) -> ResponseTeamDTO:
+    async def update_team(
+        self, db: DataBase, team_id: str, data: RequestUpdateTeamDTO
+    ) -> ResponseTeamDTO:
         try:
             team = await self.service.update_team(
                 db=db,

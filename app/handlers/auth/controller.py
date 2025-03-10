@@ -30,10 +30,9 @@ class AuthController(Controller):
 
     @post('/registration')
     async def registration_post(
-        self, db: DataBase, mailer: Mailer, lang: Language,
-        token_type: type[Token], token_config: TokenConfigType,
-        task_manager: TaskManager,
-        data: RequestRegistrationDTO,
+        self, db: DataBase, mailer: Mailer, lang: Language, token_type: type[Token],
+        token_config: TokenConfigType, task_manager: TaskManager,
+        data: RequestRegistrationDTO
     ) -> None:
         try:
             await self.service.check_user_uniqueness(
@@ -81,9 +80,10 @@ class AuthController(Controller):
         )
 
     @get('/verify-email/{registration_token:str}')
-    async def verify_email(self, db: DataBase, token_type: type[Token],
-                           token_config: TokenConfigType, registration_token: str
-                           ) -> ResponseAccessRefreshTokensDTO:
+    async def verify_email(
+        self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
+        registration_token: str
+    ) -> ResponseAccessRefreshTokensDTO:
         try:
             encode_registration_token = (
                 await self.service.verify_registration_token(
@@ -134,9 +134,10 @@ class AuthController(Controller):
         )
 
     @post('/auth')
-    async def auth(self, db: DataBase, token_type: type[Token],
-                   token_config: TokenConfigType, data: RequestAuthDTO
-                   ) -> ResponseAccessRefreshTokensDTO:
+    async def auth(
+        self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
+        data: RequestAuthDTO
+    ) -> ResponseAccessRefreshTokensDTO:
         try:
             user_id = await self.service.verify_username_password(
                 db=db,

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import AsyncGenerator, Literal, NoReturn, Sequence
 
-from asyncpg import ForeignKeyViolationError, UniqueViolationError
 from sqlalchemy import case, delete, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
@@ -16,7 +15,7 @@ from app.db.enums import EnumAddons
 from app.db.exc import (ActivateUserError, InvalidCredentialsError,
                         TeamsNotExistsError, UniqueEmailError,
                         UniqueTeamNameError, UniqueUsernameError,
-                        UserNotExistsError, UserNotFoundError)
+                        UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
 from app.db.sqlalchemy.models import Base, Team, User
 from app.types import Sentinel, UserId, Username
@@ -63,9 +62,10 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 await session.rollback()
                 raise e
 
-    async def create_user(self, username: str, password: str,
-                          email: str, is_active: bool,
-                          id: UserId = Sentinel) -> UserProtocol:
+    async def create_user(
+        self, username: str, password: str, email: str, is_active: bool,
+        id: UserId = Sentinel
+    ) -> UserProtocol:
         try:
             async with self.get_write_session() as session:
                 new_user = User(
@@ -92,8 +92,9 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
         async with self.get_write_session() as session:
             await session.execute(delete(User).where(User.id == id))
 
-    async def is_user_username_email_unique(self, username: str, email: str
-                                            ) -> Literal[True]:
+    async def is_user_username_email_unique(
+        self, username: str, email: str
+    ) -> Literal[True]:
         async with self.get_read_session() as session:
             stmt = (
                 select(
@@ -133,15 +134,17 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             else:
                 raise ValueError(f"User with username {username} does not exist")
 
-    async def create_team(self, name: str, addon: EnumAddons, vip_end: datetime | None,
-                          owner_id: str, password: str, id: str = Sentinel
-                          ) -> TeamProtocol:  # type: ignore
+    async def create_team(
+        self, name: str, addon: EnumAddons, owner_id: str, password: str,
+        id: str = Sentinel, vip_end: datetime | None = None, is_vip: bool | None = None
+    ) -> TeamProtocol:
         async with self.get_write_session() as session:
             try:
                 team = Team(
                     id=get_id() if id is Sentinel else id,
                     name=name,
                     addon=addon,
+                    is_vip=is_vip,
                     vip_end=vip_end,
                     owner_id=owner_id,
                     password=password
@@ -150,12 +153,9 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 return team  # type: ignore
 
             except IntegrityError as e:
-                if isinstance(e.orig, UniqueViolationError):
-                    raise UniqueTeamNameError(
-                        'Team with that name already exists') from e
-                elif isinstance(e.orig, ForeignKeyViolationError):
-                    raise UserNotExistsError(
-                        f'User with id {owner_id} does not exist') from e
+                raise UniqueTeamNameError(
+                    'Team with that name already exists'
+                ) from e
 
     async def del_team(self, id: str) -> None:
         async with self.get_write_session() as session:
@@ -165,29 +165,31 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             except IntegrityError as e:
                 raise TeamsNotExistsError(f"Teams with '{id}' does not exists") from e
 
-    async def get_team(self, name: str | None = Sentinel,
-                       id: str | None = Sentinel) -> TeamProtocol:
-        if name is not Sentinel:
-            condition = Team.name == name
-        elif id is not Sentinel:
-            condition = Team.id == id
-        else: raise ValueError('Must be provide at least one argument')
-
+    async def get_team_by_name(self, name: str) -> TeamProtocol:
         async with self.get_read_session() as session:
             team = (await session.execute(
                 select(Team)
                 .options(selectinload(Team.owner))
-                .filter(condition))).scalar_one_or_none()
+                .filter(Team.name == name)
+            )).scalar_one_or_none()
             if team:
                 return team  # type: ignore
             else:
-                raise TeamsNotExistsError(
-                    f"Team with argument {condition} does not exist")
+                raise TeamsNotExistsError(f"Team with name {name} does not exist")
 
-    async def update_team(self, id: str, name: str = Sentinel,
-                          addon: EnumAddons = Sentinel, is_vip: bool = Sentinel,
-                          vip_end: datetime = Sentinel, password: str = Sentinel,
-                          owner_id: str = Sentinel) -> TeamProtocol:
+    async def get_team(self, id: str) -> TeamProtocol:
+        async with self.get_read_session() as session:
+            team = await session.get(Team, id)
+            if team:
+                return team  # type: ignore
+            else:
+                raise TeamsNotExistsError(f"Team with id {id} does not exist")
+
+    async def update_team(
+        self, id: str, name: str = Sentinel, addon: EnumAddons = Sentinel,
+        is_vip: bool = Sentinel, vip_end: datetime = Sentinel, password: str = Sentinel,
+        owner_id: str = Sentinel
+    ) -> TeamProtocol:
         team = await self.get_team(id=id)
         async with self.get_write_session() as session:
             if name is not Sentinel: team.name = name  # noqa: WPS220
@@ -199,8 +201,9 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             session.add(team)
             return team  # type: ignore
 
-    async def verify_username_password(self, username: Username, password: str
-                                       ) -> UserId:
+    async def verify_username_password(
+        self, username: Username, password: str
+    ) -> UserId:
         async with self.get_read_session() as session:
             stmt = (
                 select(User)

@@ -14,8 +14,9 @@ class UserController(Controller):
     config = UserConfig
 
     @get('/account')
-    async def account_get(self, auth_client: AccessTokenPayload, db: DataBase
-                          ) -> Template:
+    async def account_get(
+        self, auth_client: AccessTokenPayload, db: DataBase
+    ) -> Template:
         user = await self.service.get_user(
             db=db,
             user_id=auth_client.sub

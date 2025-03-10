@@ -52,8 +52,9 @@ class JWToken(BaseToken[JWTokenConfig]):
             raise EncodeTokenError from e
 
     @classmethod
-    def decode(cls, token: str, config: JWTokenConfig,
-               payload_type: type[PayloadType]) -> Self:
+    def decode(
+        cls, token: str, config: JWTokenConfig, payload_type: type[PayloadType]
+    ) -> Self:
         try:
             token_payload = payload_type(
                 **jwt.decode(

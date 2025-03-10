@@ -17,8 +17,9 @@ TokenType = TypeVar('TokenType', bound=BaseToken)
 class AuthService:
 
     @staticmethod
-    async def check_user_uniqueness(db: BaseAsyncDB, username: str, email: str
-                                    ) -> None:
+    async def check_user_uniqueness(
+        db: BaseAsyncDB, username: str, email: str
+    ) -> None:
         try:
             await db.is_user_username_email_unique(username, email)
         except (UniqueUsernameError, UniqueEmailError) as e:
@@ -27,10 +28,10 @@ class AuthService:
             raise DatabaseError from e
 
     @staticmethod
-    def create_registration_token(token_type: type[Token],
-                                  token_config: TokenConfigType,
-                                  token_exp: timedelta, sub: Username
-                                  ) -> RegistrationToken:
+    def create_registration_token(
+        token_type: type[Token], token_config: TokenConfigType, token_exp: timedelta,
+        sub: Username
+    ) -> RegistrationToken:
         registration_token_payload = RegistrationTokenPayload(
             sub=sub,
             exp=int((datetime.now(UTC) + token_exp).timestamp()),
@@ -41,10 +42,10 @@ class AuthService:
         ).encode()
 
     @staticmethod
-    async def registration(db: BaseAsyncDB, username: str, email: str,
-                           password: str, task_manager: BaseAsyncTaskManager,
-                           del_inactive_user_after: timedelta
-                           ) -> None:
+    async def registration(
+        db: BaseAsyncDB, username: str, email: str, password: str,
+        task_manager: BaseAsyncTaskManager, del_inactive_user_after: timedelta
+    ) -> None:
         try:
             registration_user = await db.create_user(
                 username=username,
@@ -65,9 +66,9 @@ class AuthService:
             raise TaskManagerError from e
 
     @staticmethod
-    async def verify_access_token(token: str, token_type: type[TokenType],
-                                  token_config: TokenConfigType
-                                  ) -> TokenType:
+    async def verify_access_token(
+        token: str, token_type: type[TokenType], token_config: TokenConfigType
+    ) -> TokenType:
         try:
             return token_type.decode(
                 token, token_config, AccessTokenPayload
@@ -76,8 +77,9 @@ class AuthService:
             raise e
 
     @staticmethod
-    async def verify_refresh_token(token: str, token_type: type[TokenType],
-                                   token_config: TokenConfigType) -> TokenType:
+    async def verify_refresh_token(
+        token: str, token_type: type[TokenType], token_config: TokenConfigType
+    ) -> TokenType:
         try:
             return token_type.decode(
                 token, token_config, RefreshTokenPayload
@@ -86,9 +88,9 @@ class AuthService:
             raise e
 
     @staticmethod
-    async def verify_registration_token(token: str, token_type: type[TokenType],
-                                        token_config: TokenConfigType
-                                        ) -> TokenType:
+    async def verify_registration_token(
+        token: str, token_type: type[TokenType], token_config: TokenConfigType
+    ) -> TokenType:
         try:
             return token_type.decode(
                 token, token_config, RegistrationTokenPayload
@@ -108,9 +110,10 @@ class AuthService:
             raise DatabaseError from e
 
     @staticmethod
-    async def create_access_token(token_type: type[TokenType],
-                                  token_config: TokenConfigType,
-                                  exp: timedelta, sub: UserId) -> TokenType:
+    async def create_access_token(
+        token_type: type[TokenType], token_config: TokenConfigType, exp: timedelta,
+        sub: UserId
+    ) -> TokenType:
         try:
             return token_type(
                 config=token_config,
@@ -123,9 +126,10 @@ class AuthService:
             raise e
 
     @staticmethod
-    async def create_refresh_token(token_type: type[TokenType],
-                                   token_config: TokenConfigType,
-                                   exp: timedelta, sub: Username) -> TokenType:
+    async def create_refresh_token(
+        token_type: type[TokenType], token_config: TokenConfigType, exp: timedelta,
+        sub: Username
+    ) -> TokenType:
         try:
             return token_type(
                 config=token_config,
@@ -138,8 +142,9 @@ class AuthService:
             raise e
 
     @staticmethod
-    async def verify_username_password(db: BaseAsyncDB, username: Username,
-                                       password: str) -> UserId:
+    async def verify_username_password(
+        db: BaseAsyncDB, username: Username, password: str
+    ) -> UserId:
         try:
             return await db.verify_username_password(
                 username=username,

@@ -25,8 +25,9 @@ def get_language(request: Request) -> Language:
     return lang
 
 
-def auth_client(request: Request, token_type: type[BaseToken],
-                token_config: BaseTokenConfig) -> AccessTokenPayload:
+def auth_client(
+    request: Request, token_type: type[BaseToken], token_config: BaseTokenConfig
+) -> AccessTokenPayload:
     is_access_token_expired = None
 
     try:
