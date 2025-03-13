@@ -10,11 +10,9 @@ from litestar.exceptions import HTTPException
 from litestar.handlers import get
 from litestar.openapi import OpenAPIConfig
 from litestar.response import Template
-from litestar.static_files.config import StaticFilesConfig
-from litestar.template.config import TemplateConfig
 
 from app.caches.base import BaseAsyncTTLCache
-from app.config import (APP_PATH, TEMPLATE_CONFIG, Cache, CacheConfig,
+from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig,
                         DataBase, DataBaseConfig, Mailer, MailerConfig,
                         TaskManager, TaskManagerConfig, Token, TokenConfig)
 from app.db.abc.base import BaseAsyncDB
@@ -110,15 +108,9 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 app = Litestar(
     route_handlers=[index, AuthController, TeamController, UserController],
     openapi_config=OpenAPIConfig(
-        title='LootX API',
-        version='1.0.0',
-        description='API for managing loot boxes and team management',
+        title=f'{SERVICE_NAME} API',
+        version=VERSION
     ),
-    template_config=TemplateConfig(**TEMPLATE_CONFIG),
-    debug=True,
-    static_files_config=[
-        StaticFilesConfig(directories=[APP_PATH / 'static'], path='/static')
-    ],
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
         'cache': Provide(provide_cache, sync_to_thread=False),
@@ -133,5 +125,6 @@ app = Litestar(
     exception_handlers={
         DatabaseError: database_exc_handler,
         MailerError: mailer_exc_handler
-    }
+    },
+    debug=True
 )

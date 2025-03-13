@@ -11,6 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.db.abc.base import get_id
 from app.db.enums import EnumAddons, EnumClasses
+from app.types import ItemId, LogId, QueueId, RaiderId, TeamId, UserId
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -26,7 +27,7 @@ class ModelWithPassword(Base):
     __abstract__ = True
 
     _password: Mapped[str] = mapped_column(
-        String(24), nullable=False, name='password'
+        String(64), nullable=False, name='password'
     )
 
     def __init__(self, is_password_hash_check_enabled: bool = True, **kwargs) -> None:
@@ -58,7 +59,7 @@ class ModelWithPassword(Base):
 class User(ModelWithPassword):
     __tablename__ = 'users'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[UserId] = mapped_column(String, primary_key=True, default=get_id)
     username: Mapped[str] = mapped_column(
         String(12), unique=True, nullable=False, index=True
     )
@@ -71,7 +72,7 @@ class User(ModelWithPassword):
 class Team(ModelWithPassword):
     __tablename__ = 'teams'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[TeamId] = mapped_column(String, primary_key=True, default=get_id)
     name: Mapped[str] = mapped_column(
         String(24), unique=True, nullable=False, index=True
     )
@@ -80,7 +81,7 @@ class Team(ModelWithPassword):
     )
     is_vip: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     vip_end: Mapped[datetime | None] = mapped_column(DateTime, default=None)
-    owner_id: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
+    owner_id: Mapped[UserId] = mapped_column(ForeignKey('users.id'), nullable=False)
     owner: Mapped['User'] = relationship(back_populates='teams')
     raiders: Mapped[list['Raider']] = relationship(back_populates='team')
     logs: Mapped[list['Log']] = relationship(back_populates='team')
@@ -90,9 +91,9 @@ class Team(ModelWithPassword):
 class Raider(Base):
     __tablename__ = 'raiders'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[RaiderId] = mapped_column(String, primary_key=True, default=get_id)
     name: Mapped[str] = mapped_column(String(12), nullable=False)
-    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
+    team_id: Mapped[TeamId] = mapped_column(ForeignKey('teams.id'), nullable=False)
     class_name: Mapped[EnumClasses] = mapped_column(
         SAEnum(EnumClasses, name='classes'), nullable=False
     )
@@ -103,8 +104,11 @@ class Raider(Base):
 class Item(Base):
     __tablename__ = 'items'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[ItemId] = mapped_column(String, primary_key=True, default=get_id)
     wow_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    addon: Mapped[EnumAddons] = mapped_column(
+        SAEnum(EnumAddons, name='addons'), nullable=False
+    )
     html_tooltip: Mapped[str] = mapped_column(String, nullable=False)
     icon_id: Mapped[str] = mapped_column(String, nullable=False)
     logs: Mapped[list['Log']] = relationship(back_populates='item')
@@ -114,11 +118,13 @@ class Item(Base):
 class Queue(Base):
     __tablename__ = 'queues'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[QueueId] = mapped_column(String, primary_key=True, default=get_id)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
-    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
-    raider_id: Mapped[str] = mapped_column(ForeignKey('raiders.id'), nullable=False)
-    item_id: Mapped[str] = mapped_column(ForeignKey('items.id'), nullable=False)
+    team_id: Mapped[TeamId] = mapped_column(ForeignKey('teams.id'), nullable=False)
+    raider_id: Mapped[RaiderId] = mapped_column(
+        ForeignKey('raiders.id'), nullable=False
+    )
+    item_id: Mapped[ItemId] = mapped_column(ForeignKey('items.id'), nullable=False)
     team: Mapped['Team'] = relationship(back_populates='queues')
     raider: Mapped['Raider'] = relationship(back_populates='queues')
     item: Mapped['Item'] = relationship(back_populates='queues')
@@ -127,11 +133,11 @@ class Queue(Base):
 class Log(Base):
     __tablename__ = 'logs'
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=get_id)
-    team_id: Mapped[str] = mapped_column(ForeignKey('teams.id'), nullable=False)
-    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
-    item_id: Mapped[str] = mapped_column(ForeignKey('items.id'), nullable=False)
-    sequence: Mapped[str] = mapped_column(String)
+    id: Mapped[LogId] = mapped_column(String, primary_key=True, default=get_id)
+    team_id: Mapped[TeamId] = mapped_column(ForeignKey('teams.id'), nullable=False)
+    user_id: Mapped[UserId] = mapped_column(ForeignKey('users.id'), nullable=False)
+    item_id: Mapped[ItemId] = mapped_column(ForeignKey('items.id'), nullable=False)
+    data: Mapped[str] = mapped_column(String)
     team: Mapped['Team'] = relationship(back_populates='logs')
     user: Mapped['User'] = relationship(back_populates='logs')
     item: Mapped['Item'] = relationship(back_populates='logs')

@@ -1,10 +1,8 @@
 # flake8-in-file-ignores: noqa: B904, WPS11
 
 from litestar import status_codes as status
-from litestar.controller import Controller
 from litestar.exceptions import HTTPException
 from litestar.handlers import get, post
-from litestar.response import Template
 
 from app import error_codes as error_code
 from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
@@ -12,21 +10,20 @@ from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
                         Token, TokenConfigType)
 from app.db.exc import (ActivateUserError, InvalidCredentialsError,
                         UniqueEmailError, UniqueUsernameError)
+from app.handlers.abc.controller import BaseController
 from app.handlers.auth.dto import (RequestAuthDTO, RequestRegistrationDTO,
                                    ResponseAccessRefreshTokensDTO)
-from app.handlers.auth.service import AuthService
 from app.mailers.base import NonExistentEmail
-from app.tokens.base import DecodeTokenError
+from app.task_managers.base import TaskManagerError
+from app.tokens.base import (DecodeTokenError, create_access_token,
+                             create_refresh_token, create_registration_token,
+                             verify_registration_token)
 from app.tokens.payloads import RegistrationTokenPayload
 
 
-class AuthController(Controller):
-    service = AuthService()
+class AuthController(BaseController[AuthConfig]):
     config = AuthConfig()
-
-    @get('/registration')
-    async def registration_get(self) -> Template:
-        return Template(template_name='registration.html')
+    path = '/auth'
 
     @post('/registration')
     async def registration_post(
@@ -35,8 +32,7 @@ class AuthController(Controller):
         data: RequestRegistrationDTO
     ) -> None:
         try:
-            await self.service.check_user_uniqueness(
-                db=db,
+            await db.is_user_username_email_unique(
                 username=data.username,
                 email=data.email
             )
@@ -51,12 +47,12 @@ class AuthController(Controller):
                 extra=error_code.email_not_unique
             )
 
-        registration_token = self.service.create_registration_token(
-            sub=data.username,
+        registration_token = create_registration_token(
             token_type=token_type,
             token_config=token_config,
-            token_exp=self.config.registration_token_exp
-        )
+            token_exp=self.config.registration_token_exp,
+            sub=data.username
+        ).encode()
 
         try:
             await mailer.send(
@@ -70,14 +66,20 @@ class AuthController(Controller):
                 extra=error_code.email_non_existent
             )
 
-        await self.service.registration(
-            db=db,
+        registration_user = await db.create_user(
             username=data.username,
-            email=data.email,
             password=data.password,
-            task_manager=task_manager,
-            del_inactive_user_after=AuthConfig.del_inactive_user_after
+            email=data.email,
+            is_active=False
         )
+        try:
+            await task_manager.del_inactive_user(
+                user_id=registration_user.id,
+                eta_delta=self.config.del_inactive_user_after
+            )
+        except Exception as e:
+            await db.del_user(registration_user.id)
+            raise TaskManagerError from e
 
     @get('/verify-email/{registration_token:str}')
     async def verify_email(
@@ -85,12 +87,10 @@ class AuthController(Controller):
         registration_token: str
     ) -> ResponseAccessRefreshTokensDTO:
         try:
-            encode_registration_token = (
-                await self.service.verify_registration_token(
-                    token=registration_token,
-                    token_type=token_type,
-                    token_config=token_config
-                )
+            encode_registration_token = verify_registration_token(
+                token=registration_token,
+                token_type=token_type,
+                token_config=token_config
             )
             registration_token_payload: RegistrationTokenPayload = (
                 encode_registration_token.payload
@@ -104,24 +104,21 @@ class AuthController(Controller):
             )
 
         try:
-            user_id = await self.service.activate_user(
-                db=db,
-                username=username
-            )
+            user_id = await db.activate_user(username)
         except ActivateUserError:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 extra=error_code.user_is_active
             )
 
-        access_token = await self.service.create_access_token(
+        access_token = create_access_token(
             token_type=token_type,
             token_config=token_config,
             exp=self.config.access_token_exp,
             sub=user_id
         )
 
-        refresh_token = await self.service.create_refresh_token(
+        refresh_token = create_refresh_token(
             token_type=token_type,
             token_config=token_config,
             exp=self.config.access_token_exp,
@@ -133,14 +130,13 @@ class AuthController(Controller):
             refresh_token=refresh_token.encode()
         )
 
-    @post('/auth')
+    @post('/')
     async def auth(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         data: RequestAuthDTO
     ) -> ResponseAccessRefreshTokensDTO:
         try:
-            user_id = await self.service.verify_username_password(
-                db=db,
+            user_id = await db.verify_username_password(
                 username=data.username,
                 password=data.password
             )
@@ -150,14 +146,14 @@ class AuthController(Controller):
                 extra=error_code.invalid_credentials
             )
 
-        access_token = await self.service.create_access_token(
+        access_token = create_access_token(
             token_type=token_type,
             token_config=token_config,
             exp=self.config.access_token_exp,
             sub=user_id
         )
 
-        refresh_token = await self.service.create_refresh_token(
+        refresh_token = create_refresh_token(
             token_type=token_type,
             token_config=token_config,
             exp=self.config.access_token_exp,

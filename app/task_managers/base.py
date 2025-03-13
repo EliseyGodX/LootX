@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Callable, Generic, Self, TypeVar
 
-from kapusta import Kapusta, Task
+from kapusta import Kapusta, Task, KapustaError
 
 from app.task_managers.configs import BaseTaskManagerConfig, KapustaConfig
 from app.types import UserId
@@ -65,11 +65,14 @@ class KapustaTaskManager(BaseAsyncTaskManager[KapustaConfig]):
     async def del_inactive_user(
         self, user_id: UserId, eta_delta: timedelta
     ) -> None:
-        update_params = {'eta_delta': eta_delta} if eta_delta else {}
-        await self.kapusta_tasks[self.tasks.del_inactive_user].launch(
-            update_params=update_params,
-            user_id=user_id
-        )
+        try:
+            update_params = {'eta_delta': eta_delta} if eta_delta else {}
+            await self.kapusta_tasks[self.tasks.del_inactive_user].launch(
+                update_params=update_params,
+                user_id=user_id
+            )
+        except KapustaError as e:
+            raise TaskManagerError from e
 
     async def close(self) -> None:
         await self.kapusta.shutdown()

@@ -48,7 +48,7 @@ class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
 
         except Exception as e:
             self.config.logger.warning(e)
-            raise e
+            raise MailerError from e
 
         return self
 
@@ -66,7 +66,7 @@ class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
 
         except Exception as e:
             self.config.logger.warning(e)
-            raise e
+            raise MailerError from e
 
     async def close(self) -> None:
         if self.smtp_session:

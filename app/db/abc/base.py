@@ -8,7 +8,7 @@ from ulid import ULID
 from app.db.abc.configs import BaseDBConfig
 from app.db.abc.models import TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
-from app.types import Sentinel, UserId, Username
+from app.types import Sentinel, TeamId, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
 
@@ -34,7 +34,16 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def get_user(self, id: UserId) -> UserProtocol: ...
 
     @abstractmethod
+    async def get_user_by_username(self, username: Username) -> UserProtocol: ...
+
+    @abstractmethod
+    async def get_user_email(self, id: UserId) -> str: ...
+
+    @abstractmethod
     async def del_user(self, id: UserId) -> None: ...
+
+    @abstractmethod
+    async def change_user_password(self, id: UserId, new_password: str) -> None: ...
 
     @abstractmethod
     async def is_user_username_email_unique(
@@ -50,23 +59,31 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     @abstractmethod
     async def create_team(
         self, name: str, addon: EnumAddons, owner_id: str, password: str,
-        id: str = Sentinel, vip_end: datetime | None = None, is_vip: bool | None = None
+        id: TeamId = Sentinel, vip_end: datetime | None = None,
+        is_vip: bool | None = None
     ) -> TeamProtocol: ...
 
     @abstractmethod
-    async def del_team(self, id: str) -> None: ...
+    async def del_team(self, id: TeamId) -> None: ...
 
     @abstractmethod
     async def get_team_by_name(self, name: str) -> TeamProtocol: ...
 
     @abstractmethod
-    async def get_team(self, id: str) -> TeamProtocol: ...
+    async def get_team(self, id: TeamId) -> TeamProtocol: ...
 
     @abstractmethod
     async def update_team(
-        self, id: str, name: str = Sentinel, addon: EnumAddons = Sentinel,
-        is_vip: bool = Sentinel, vip_end: datetime = Sentinel, password: str = Sentinel,
+        self, id: TeamId, name: str | None = None, addon: EnumAddons | None = None,
+        is_vip: bool | None = None, vip_end: datetime | None = None,
+        password: str | None = None
     ) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def get_team_by_name_with_owner(self, team_name: str) -> TeamProtocol: ...
+
+    @abstractmethod
+    async def get_team_with_owner(self, team_id: str) -> TeamProtocol: ...
 
     @abstractmethod
     async def verify_username_password(

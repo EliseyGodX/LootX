@@ -7,11 +7,10 @@ from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Mapping
 
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
-from litestar.contrib.jinja import JinjaTemplateEngine
 
 from app.caches.base import RedisAsyncCache
 from app.caches.configs import RedisConfig
@@ -38,9 +37,12 @@ class Language(Enum):
 
 
 SERVICE_NAME = 'LootX'
+VERSION = '0.0.0'
 
 APP_PATH = Path(__file__).parent
 ROOT_PATH = APP_PATH.parent
+
+allow_origins = ["http://localhost:3000"]
 
 load_dotenv(ROOT_PATH / '.env')
 
@@ -59,22 +61,26 @@ logger.addHandler(file_handler)
 
 DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore[reportArgumentType]
 
-CELERY_BROKER_URL: str = os.getenv(
-    'CELERY_BROKER_URL'
-)  # type: ignore[reportArgumentType]
-
-TEMPLATE_CONFIG: Mapping[str, Any] = MappingProxyType({
-    'directory': APP_PATH / 'templates',
-    'engine': JinjaTemplateEngine
-})
-
 
 EMAIL_REGISTRATION_SUBJECT: Mapping[Language, str] = MappingProxyType({
     Language.en: 'Registration'
 })
-
 EMAIL_REGISTRATION_BODY: Mapping[Language, str] = MappingProxyType({
     Language.en: '{}'
+})
+
+EMAIL_CHANGE_PASSWORD_BODY: Mapping[Language, str] = MappingProxyType({
+    Language.en: '{}'
+})
+EMAIL_CHANGE_PASSWORD_SUBJECT: Mapping[Language, str] = MappingProxyType({
+    Language.en: 'change password'
+})
+
+EMAIL_DELETE_TEAM_BODY: Mapping[Language, str] = MappingProxyType({
+    Language.en: '{}'
+})
+EMAIL_DELETE_TEAM_SUBJECT: Mapping[Language, str] = MappingProxyType({
+    Language.en: 'delete team'
 })
 
 DataBase = AsyncSQLAlchemyDB
@@ -117,7 +123,12 @@ TaskManagerConfig = KapustaConfig(
 
 
 @dataclass(frozen=True)
-class AuthConfig:
+class BaseConfig:
+    ...
+
+
+@dataclass(frozen=True)
+class AuthConfig(BaseConfig):
     username_min_length: int = 2
     username_max_length: int = 12
     email_max_length: int = 256
@@ -132,13 +143,15 @@ class AuthConfig:
 
 
 @dataclass(frozen=True)
-class TeamConfig:
+class TeamConfig(BaseConfig):
     name_min_length: int = 2
     name_max_length: int = 24
     password_min_length: int = 5
     password_max_length: int = 24
 
+    delete_team_token_exp: timedelta = timedelta(minutes=5)
+
 
 @dataclass(frozen=True)
-class UserConfig:
-    ...
+class UserConfig(BaseConfig):
+    change_password_token_exp: timedelta = timedelta(minutes=5)

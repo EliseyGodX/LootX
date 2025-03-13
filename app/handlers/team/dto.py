@@ -1,12 +1,14 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from app.config import TeamConfig
 from app.db.enums import EnumAddons
+from app.handlers.abc.dto import BaseDTO
+from app.types import TeamId
 
 
-class RequestCreateTeamDTO(BaseModel):
+class RequestCreateTeamDTO(BaseDTO):
     name: str = Field(..., min_length=TeamConfig.name_min_length,
                       max_length=TeamConfig.name_max_length)
     addon: EnumAddons
@@ -14,17 +16,16 @@ class RequestCreateTeamDTO(BaseModel):
                           max_length=TeamConfig.password_max_length)
 
 
-class RequestUpdateTeamDTO(BaseModel):
+class RequestUpdateTeamDTO(BaseDTO):
     name: str | None = Field(None, min_length=TeamConfig.name_min_length,
                              max_length=TeamConfig.name_max_length)
     addon: EnumAddons | None = None
-    is_vip: bool | None = None
-    vip_end: datetime | None = None
     password: str | None = Field(None, min_length=TeamConfig.password_min_length,
                                  max_length=TeamConfig.password_max_length)
 
 
-class ResponseTeamDTO(BaseModel):
+class ResponseTeamDTO(BaseDTO):
+    id: TeamId
     name: str
     addon: EnumAddons
     is_vip: bool

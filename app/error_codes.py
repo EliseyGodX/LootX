@@ -79,3 +79,23 @@ update_tokens = ErrorExtra(
     error_code=15,
     message='New access and refresh tokens'
 )
+
+change_password_token_invalid = ErrorExtra(
+    error_code=16,
+    message='Change password token is invalid'
+)
+
+delete_team_token_invalid = ErrorExtra(
+    error_code=17,
+    message='Delete team token is invalid'
+)
+
+user_not_team_owner = ErrorExtra(
+    error_code=18,
+    message='The action is available only to the owner of the team'
+)
+
+tokens_subject_not_equal = ErrorExtra(
+    error_code=19,
+    message='Tokens subject not equal'
+)

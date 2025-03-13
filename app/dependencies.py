@@ -1,7 +1,5 @@
 # flake8-in-file-ignores: noqa: B904
 
-from datetime import datetime
-
 from litestar import status_codes as status
 from litestar.connection import Request
 from litestar.exceptions import HTTPException
@@ -9,7 +7,8 @@ from litestar.exceptions import HTTPException
 from app import error_codes as error_code
 from app.config import AuthConfig, Language
 from app.tokens.base import (BaseToken, BaseTokenConfig, DecodeTokenError,
-                             TokenExpiredError)
+                             TokenExpiredError, create_access_token,
+                             create_refresh_token)
 from app.tokens.payloads import AccessTokenPayload, RefreshTokenPayload
 
 
@@ -77,26 +76,27 @@ def auth_client(
             extra=error_code.refresh_token_cookie_missing
         )
 
-    new_access_token = token_type(
-        payload=AccessTokenPayload(
-            exp=(datetime.now() + AuthConfig.access_token_exp).timestamp(),
-            sub=refresh_token_payload.sub,
-        ),
-        config=token_config
+    new_access_token = create_access_token(
+        token_type=token_type,
+        token_config=token_config,
+        exp=AuthConfig.access_token_exp,
+        sub=refresh_token_payload.sub
     )
 
-    new_refresh_token = token_type(
-        payload=RefreshTokenPayload(
-            exp=(datetime.now() + AuthConfig.refresh_token_exp).timestamp(),
-            sub=refresh_token_payload.sub,
-        ),
-        config=token_config
+    new_refresh_token = create_refresh_token(
+        token_type=token_type,
+        token_config=token_config,
+        exp=AuthConfig.access_token_exp,
+        sub=refresh_token_payload.sub
     )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail=new_access_token.encode(),
-        extra=error_code.update_tokens,
+        extra={
+            **error_code.update_tokens,
+            'access_token': new_access_token
+        },
         headers={
             "Set-Cookie":
                 f"refresh_token={new_refresh_token.encode()}; HttpOnly; Path=/; Secure"

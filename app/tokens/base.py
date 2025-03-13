@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime, timedelta
 from typing import Generic, Self, TypeVar
 
 import jwt
 
 from app.config import dataclass
 from app.tokens.configs import BaseTokenConfig, JWTokenConfig
-from app.tokens.payloads import BaseTokenPayload
+from app.tokens.payloads import (AccessTokenPayload, BaseTokenPayload,
+                                 ChangePasswordTokenPayload,
+                                 DeleteTeamTokenPayload, RefreshTokenPayload,
+                                 RegistrationTokenPayload)
+from app.types import TeamId, UserId, Username
 
 
 class TokenError(Exception): ...
@@ -16,6 +21,7 @@ class TokenExpiredError(DecodeTokenError): ...
 
 TokenConfig = TypeVar('TokenConfig', bound=BaseTokenConfig)
 PayloadType = TypeVar('PayloadType', bound=BaseTokenPayload)
+TokenType = TypeVar('TokenType', bound='BaseToken')
 
 
 @dataclass
@@ -73,3 +79,128 @@ class JWToken(BaseToken[JWTokenConfig]):
 
         except Exception as e:
             raise DecodeTokenError from e
+
+
+def create_registration_token(
+    token_type: type[TokenType], token_config: BaseTokenConfig, token_exp: timedelta,
+    sub: Username
+) -> TokenType:
+    registration_token_payload = RegistrationTokenPayload(
+        exp=int((datetime.now(UTC) + token_exp).timestamp()),
+        sub=sub,
+    )
+    return token_type(
+        registration_token_payload,
+        token_config
+    )
+
+
+def create_access_token(
+    token_type: type[TokenType], token_config: BaseTokenConfig, exp: timedelta,
+    sub: UserId
+) -> TokenType:
+    access_token_payload = AccessTokenPayload(
+        exp=(datetime.now() + exp).timestamp(),
+        sub=sub
+    )
+    return token_type(
+        access_token_payload,
+        token_config
+    )
+
+
+def create_refresh_token(
+    token_type: type[TokenType], token_config: BaseTokenConfig, exp: timedelta,
+    sub: UserId
+) -> TokenType:
+    refresh_token_payload = RefreshTokenPayload(
+        exp=(datetime.now() + exp).timestamp(),
+        sub=sub
+    )
+    return token_type(
+        refresh_token_payload,
+        token_config
+    )
+
+
+def create_change_password_token(
+    token_type: type[TokenType], token_config: BaseTokenConfig, exp: timedelta,
+    sub: UserId
+) -> TokenType:
+    refresh_token_payload = ChangePasswordTokenPayload(
+        exp=(datetime.now() + exp).timestamp(),
+        sub=sub
+    )
+    return token_type(
+        refresh_token_payload,
+        token_config
+    )
+
+
+def create_delete_team_token(
+    token_type: type[TokenType], token_config: BaseTokenConfig, exp: timedelta,
+    sub: TeamId
+) -> TokenType:
+    refresh_token_payload = DeleteTeamTokenPayload(
+        exp=(datetime.now() + exp).timestamp(),
+        sub=sub
+    )
+    return token_type(
+        refresh_token_payload,
+        token_config
+    )
+
+
+def verify_access_token(
+    token: str, token_type: type[TokenType], token_config: BaseTokenConfig
+) -> TokenType:
+    try:
+        return token_type.decode(
+            token, token_config, AccessTokenPayload
+        )
+    except DecodeTokenError as e:
+        raise e
+
+
+def verify_refresh_token(
+    token: str, token_type: type[TokenType], token_config: BaseTokenConfig
+) -> TokenType:
+    try:
+        return token_type.decode(
+            token, token_config, RefreshTokenPayload
+        )
+    except DecodeTokenError as e:
+        raise e
+
+
+def verify_registration_token(
+    token: str, token_type: type[TokenType], token_config: BaseTokenConfig
+) -> TokenType:
+    try:
+        return token_type.decode(
+            token, token_config, RegistrationTokenPayload
+        )
+    except DecodeTokenError as e:
+        raise e
+
+
+def verify_change_password_token(
+    token: str, token_type: type[TokenType], token_config: BaseTokenConfig
+) -> TokenType:
+    try:
+        return token_type.decode(
+            token, token_config, ChangePasswordTokenPayload
+        )
+    except DecodeTokenError as e:
+        raise e
+
+
+def verify_delete_team_token(
+    token: str, token_type: type[TokenType], token_config: BaseTokenConfig
+) -> TokenType:
+    try:
+        return token_type.decode(
+            token, token_config, DeleteTeamTokenPayload
+        )
+    except DecodeTokenError as e:
+        raise e
