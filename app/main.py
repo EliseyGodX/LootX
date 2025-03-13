@@ -5,16 +5,15 @@ from typing import AsyncIterator, NoReturn
 
 from litestar import Litestar, Request
 from litestar import status_codes as status
+from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.exceptions import HTTPException
-from litestar.handlers import get
 from litestar.openapi import OpenAPIConfig
-from litestar.response import Template
 
 from app.caches.base import BaseAsyncTTLCache
-from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig,
-                        DataBase, DataBaseConfig, Mailer, MailerConfig,
-                        TaskManager, TaskManagerConfig, Token, TokenConfig)
+from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, DataBase,
+                        DataBaseConfig, Mailer, MailerConfig, TaskManager,
+                        TaskManagerConfig, Token, TokenConfig, allow_origins)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.dependencies import auth_client, get_language
@@ -92,11 +91,6 @@ def provide_auth_client_dep(request: Request) -> AccessTokenPayload:
     )
 
 
-@get('/')
-async def index() -> Template:
-    return Template(template_name='edit.html')
-
-
 def database_exc_handler(request: Request, exc: DatabaseError) -> NoReturn:
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -106,7 +100,7 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 
 app = Litestar(
-    route_handlers=[index, AuthController, TeamController, UserController],
+    route_handlers=[AuthController, TeamController, UserController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
         version=VERSION
@@ -126,5 +120,6 @@ app = Litestar(
         DatabaseError: database_exc_handler,
         MailerError: mailer_exc_handler
     },
+    cors_config=CORSConfig(allow_origins=allow_origins),
     debug=True
 )
