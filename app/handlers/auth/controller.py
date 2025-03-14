@@ -1,15 +1,15 @@
-# flake8-in-file-ignores: noqa: B904, WPS11
+# flake8-in-file-ignores: noqa: B904, WPS11, WPS400
 
-from litestar import status_codes as status
-from litestar.exceptions import HTTPException
 from litestar.handlers import get, post
+from litestar.openapi.spec import Example
 
-from app import error_codes as error_code
+from app import errors as error
 from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
                         AuthConfig, DataBase, Language, Mailer, TaskManager,
                         Token, TokenConfigType)
 from app.db.exc import (ActivateUserError, InvalidCredentialsError,
                         UniqueEmailError, UniqueUsernameError)
+from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.abc.controller import BaseController
 from app.handlers.auth.dto import (RequestAuthDTO, RequestRegistrationDTO,
                                    ResponseAccessRefreshTokensDTO)
@@ -25,7 +25,15 @@ class AuthController(BaseController[AuthConfig]):
     config = AuthConfig()
     path = '/auth'
 
-    @post('/registration')
+    @post('/registration', responses={
+        409: litestar_response_spec(examples=[
+            Example('UsernameNotUnique', value=error.UsernameNotUnique()),
+            Example('EmailNotUnique', value=error.EmailNotUnique())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('EmailNonExistent', value=error.EmailNonExistent())
+        ])
+    })
     async def registration_post(
         self, db: DataBase, mailer: Mailer, lang: Language, token_type: type[Token],
         token_config: TokenConfigType, task_manager: TaskManager,
@@ -37,15 +45,9 @@ class AuthController(BaseController[AuthConfig]):
                 email=data.email
             )
         except UniqueUsernameError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                extra=error_code.username_not_unique
-            )
+            raise litestar_raise(error.UsernameNotUnique)
         except UniqueEmailError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                extra=error_code.email_not_unique
-            )
+            raise litestar_raise(error.EmailNotUnique)
 
         registration_token = create_registration_token(
             token_type=token_type,
@@ -61,10 +63,7 @@ class AuthController(BaseController[AuthConfig]):
                 to_email=data.email
             )
         except NonExistentEmail:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.email_non_existent
-            )
+            raise litestar_raise(error.EmailNonExistent)
 
         registration_user = await db.create_user(
             username=data.username,
@@ -81,7 +80,14 @@ class AuthController(BaseController[AuthConfig]):
             await db.del_user(registration_user.id)
             raise TaskManagerError from e
 
-    @get('/verify-email/{registration_token:str}')
+    @get('/verify-email/{registration_token:str}', responses={
+        403: litestar_response_spec(examples=[
+            Example('UserIsActive', value=error.UserIsActive())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('RegistrationTokenInvalid', value=error.RegistrationTokenInvalid())  # noqa
+        ])
+    })
     async def verify_email(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         registration_token: str
@@ -96,20 +102,13 @@ class AuthController(BaseController[AuthConfig]):
                 encode_registration_token.payload
             )  # type: ignore
             username = registration_token_payload.sub
-
         except DecodeTokenError:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.registration_token_invalid
-            )
+            raise litestar_raise(error.RegistrationTokenInvalid)
 
         try:
             user_id = await db.activate_user(username)
         except ActivateUserError:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.user_is_active
-            )
+            raise litestar_raise(error.UserIsActive)
 
         access_token = create_access_token(
             token_type=token_type,
@@ -130,7 +129,11 @@ class AuthController(BaseController[AuthConfig]):
             refresh_token=refresh_token.encode()
         )
 
-    @post('/')
+    @post('/', responses={
+        401: litestar_response_spec(examples=[
+            Example('InvalidCredentials', value=error.InvalidCredentials())
+        ])
+    })
     async def auth(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         data: RequestAuthDTO
@@ -141,10 +144,7 @@ class AuthController(BaseController[AuthConfig]):
                 password=data.password
             )
         except InvalidCredentialsError:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.invalid_credentials
-            )
+            raise litestar_raise(error.InvalidCredentials)
 
         access_token = create_access_token(
             token_type=token_type,

@@ -1,15 +1,16 @@
-# flake8-in-file-ignores: noqa: B904, WPS110
+# flake8-in-file-ignores: noqa: B904, WPS110, WPS400
 
-from litestar import status_codes as status
-from litestar.exceptions import HTTPException
 from litestar.handlers import delete, get, patch, post
+from litestar.openapi.spec import Example
 
-from app import error_codes as error_code
+from app import errors as error
+from app import openapi_tags as tags
 from app.config import (EMAIL_DELETE_TEAM_BODY, EMAIL_DELETE_TEAM_SUBJECT,
                         DataBase, Language, Mailer, TeamConfig, Token,
                         TokenConfigType)
 from app.db.exc import TeamsAlreadyExistsError, TeamsNotExistsError
 from app.dependencies import DecodeTokenError
+from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.abc.controller import BaseController
 from app.handlers.team.dto import (RequestCreateTeamDTO, RequestUpdateTeamDTO,
                                    ResponseTeamDTO)
@@ -24,8 +25,12 @@ class TeamController(BaseController[TeamConfig]):
     config = TeamConfig()
     path = '/team'
 
-    @get('/{name:str}')
-    async def team_get_by_name(self, db: DataBase, name: str) -> ResponseTeamDTO:
+    @get('/{name:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    })
+    async def get_team_by_name(self, db: DataBase, name: str) -> ResponseTeamDTO:
         try:
             team = await db.get_team_by_name(name)
             return ResponseTeamDTO(
@@ -38,12 +43,20 @@ class TeamController(BaseController[TeamConfig]):
                 password=team.password
             )
         except TeamsNotExistsError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                extra=error_code.team_not_exists
-            )
+            raise litestar_raise(error.TeamNotExists)
 
-    @post('/')
+    @post('/', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        409: litestar_response_spec(examples=[
+            Example('TeamNameNotUnique', value=error.TeamNameNotUnique())
+        ])
+    }, tags=[tags.requires_authorization])
     async def create_team(
         self, auth_client: AccessTokenPayload, db: DataBase, data: RequestCreateTeamDTO
     ) -> ResponseTeamDTO:
@@ -63,14 +76,25 @@ class TeamController(BaseController[TeamConfig]):
                 owner_id=team.owner_id,
                 password=team.password
             )
-
         except TeamsAlreadyExistsError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                extra=error_code.team_name_not_unique
-            )
+            raise litestar_raise(error.TeamNameNotUnique)
 
-    @post('delete-request/{team_name:str}')
+    @post('delete-request/{team_name:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        403: litestar_response_spec(examples=[
+            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('EmailNonExistent', value=error.EmailNonExistent()),
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    }, tags=[tags.requires_authorization])
     async def delete_request_team(
         self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
         token_type: type[Token], token_config: TokenConfigType, lang: Language,
@@ -79,16 +103,10 @@ class TeamController(BaseController[TeamConfig]):
         try:
             team = await db.get_team_by_name_with_owner(team_name)
         except TeamsNotExistsError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                extra=error_code.team_not_exists
-            )
+            raise litestar_raise(error.TeamNotExists)
 
         if team.owner.id != auth_client.sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.user_not_team_owner
-            )
+            raise litestar_raise(error.UserNotTeamOwner)
 
         delete_team_token = create_delete_team_token(
             token_type=token_type,
@@ -106,12 +124,21 @@ class TeamController(BaseController[TeamConfig]):
                 to_email=team.owner.email
             )
         except NonExistentEmail:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.email_non_existent
-            )
+            raise litestar_raise(error.EmailNonExistent)
 
-    @delete('delete/{delete_team_token:str}')
+    @delete('delete/{delete_team_token:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('DeleteTeamTokenInvalid', value=error.DeleteTeamTokenInvalid()),  # noqa: E501
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    }, tags=[tags.requires_authorization])
     async def delete_team(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
         token_config: TokenConfigType, delete_team_token: DeleteTeamToken
@@ -126,28 +153,23 @@ class TeamController(BaseController[TeamConfig]):
                 encode_delete_team_token.payload
             )  # type: ignore
         except DecodeTokenError:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.delete_team_token_invalid
-            )
+            raise litestar_raise(error.DeleteTeamTokenInvalid)
 
         try:
             team = await db.get_team_with_owner(delete_team_token_payload.sub)
         except TeamsNotExistsError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                extra=error_code.team_not_exists
-            )
+            raise litestar_raise(error.TeamNotExists)
 
         if team.owner.id != auth_client.sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.user_not_team_owner
-            )
+            raise litestar_raise(error.UserNotTeamOwner)
 
         await db.del_team(delete_team_token_payload.sub)
 
-    @patch('/{team_id:str}')
+    @patch('/{team_id:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    })
     async def update_team(
         self, db: DataBase, team_id: str, data: RequestUpdateTeamDTO
     ) -> ResponseTeamDTO:
@@ -167,9 +189,5 @@ class TeamController(BaseController[TeamConfig]):
                 owner_id=team.owner_id,
                 password=team.password,
             )
-
         except TeamsNotExistsError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                extra=error_code.team_not_exists
-            )
+            raise litestar_raise(error.TeamNotExists)

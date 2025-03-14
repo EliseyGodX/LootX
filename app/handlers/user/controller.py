@@ -1,13 +1,15 @@
-# flake8-in-file-ignores: noqa: B904, WPS110
-from litestar import status_codes as status
-from litestar.exceptions import HTTPException
-from litestar.handlers import get, patch, post
+# flake8-in-file-ignores: noqa: B904, WPS110, WPS400
 
-from app import error_codes as error_code
+from litestar.handlers import get, patch, post
+from litestar.openapi.spec import Example
+
+from app import errors as error
+from app import openapi_tags as tags
 from app.config import (EMAIL_CHANGE_PASSWORD_BODY,
                         EMAIL_CHANGE_PASSWORD_SUBJECT, DataBase, Language,
                         Mailer, Token, TokenConfigType, UserConfig)
 from app.db.exc import UserNotFoundError
+from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.abc.controller import BaseController
 from app.handlers.user.dto import RequestChangePasswordDTO, ResponseUserDTO
 from app.mailers.base import NonExistentEmail
@@ -22,7 +24,11 @@ class UserController(BaseController[UserConfig]):
     config = UserConfig()
     path = '/user'
 
-    @get('/username/{username:str}')
+    @get('/username/{username:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('UserNotExists', value=error.UserNotExists())
+        ])
+    })
     async def get_user_by_username(
         self, db: DataBase, username: Username
     ) -> ResponseUserDTO:
@@ -36,12 +42,13 @@ class UserController(BaseController[UserConfig]):
                 password=user.password
             )
         except UserNotFoundError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.user_not_exists
-            )
+            raise litestar_raise(error.UserNotExists)
 
-    @get('/id/{user_id:str}')
+    @get('/id/{user_id:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('UserNotExists', value=error.UserNotExists())
+        ])
+    })
     async def get_user_by_id(
         self, db: DataBase, user_id: UserId
     ) -> ResponseUserDTO:
@@ -55,12 +62,21 @@ class UserController(BaseController[UserConfig]):
                 password=user.password
             )
         except UserNotFoundError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.user_not_exists
-            )
+            raise litestar_raise(error.UserNotExists)
 
-    @post('/change-password-request')
+    @post('/change-password-request', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('UserNotExists', value=error.UserNotExists()),
+            Example('EmailNonExistent', value=error.EmailNonExistent())
+        ])
+    }, tags=[tags.requires_authorization])
     async def change_password_request(
         self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
         lang: Language, token_type: type[Token], token_config: TokenConfigType
@@ -68,10 +84,7 @@ class UserController(BaseController[UserConfig]):
         try:
             user_email = await db.get_user_email(auth_client.sub)
         except UserNotFoundError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.user_not_exists
-            )
+            raise litestar_raise(error.UserNotExists)
 
         change_password_token = create_change_password_token(
             token_type=token_type,
@@ -89,12 +102,23 @@ class UserController(BaseController[UserConfig]):
                 to_email=user_email
             )
         except NonExistentEmail:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                extra=error_code.email_non_existent
-            )
+            raise litestar_raise(error.EmailNonExistent)
 
-    @patch('change-password/{change_password_token:str}')
+    @patch('change-password/{change_password_token:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        403: litestar_response_spec(examples=[
+            Example('TokensSubjectNotEqual', value=error.TokensSubjectNotEqual())  # noqa: E501
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('ChangePasswordTokenInvalid', value=error.ChangePasswordTokenInvalid())  # noqa
+        ])
+    }, tags=[tags.requires_authorization])
     async def change_password(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
         token_config: TokenConfigType, data: RequestChangePasswordDTO,
@@ -110,16 +134,10 @@ class UserController(BaseController[UserConfig]):
                 encode_change_password_token.payload
             )  # type: ignore
         except DecodeTokenError:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.delete_team_token_invalid
-            )
+            raise litestar_raise(error.ChangePasswordTokenInvalid)
 
         if auth_client.sub != change_password_token_payload.sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                extra=error_code.tokens_subject_not_equal
-            )
+            raise litestar_raise(error.TokensSubjectNotEqual)
 
         await db.change_user_password(
             id=auth_client.sub,

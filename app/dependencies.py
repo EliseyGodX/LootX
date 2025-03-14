@@ -1,11 +1,10 @@
 # flake8-in-file-ignores: noqa: B904
 
-from litestar import status_codes as status
 from litestar.connection import Request
-from litestar.exceptions import HTTPException
 
-from app import error_codes as error_code
+from app import errors as error
 from app.config import AuthConfig, Language
+from app.errors import litestar_raise
 from app.tokens.base import (BaseToken, BaseTokenConfig, DecodeTokenError,
                              TokenExpiredError, create_access_token,
                              create_refresh_token)
@@ -17,10 +16,7 @@ def get_language(request: Request) -> Language:
     try:
         lang = Language(lang)
     except ValueError:
-        raise HTTPException(  # noqa: B904
-            status_code=status.HTTP_400_BAD_REQUEST,
-            extra=error_code.invalid_lang_cookie
-        )
+        lang = Language.en
     return lang
 
 
@@ -40,16 +36,10 @@ def auth_client(
         is_access_token_expired = True
 
     except (DecodeTokenError, IndexError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            extra=error_code.access_token_invalid
-        )
+        raise litestar_raise(error.AccessTokenInvalid)
 
     except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            extra=error_code.authorization_header_missing
-        )
+        raise litestar_raise(error.AuthorizationHeaderMissing)
 
     if not is_access_token_expired:
         return access_token.payload  # type: ignore
@@ -65,16 +55,10 @@ def auth_client(
         )  # type: ignore
 
     except DecodeTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            extra=error_code.refresh_token_invalid
-        )
+        raise litestar_raise(error.RefreshTokenInvalid)
 
     except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            extra=error_code.refresh_token_cookie_missing
-        )
+        raise litestar_raise(error.RefreshTokenCookieMissing)
 
     new_access_token = create_access_token(
         token_type=token_type,
@@ -89,16 +73,11 @@ def auth_client(
         exp=AuthConfig.access_token_exp,
         sub=refresh_token_payload.sub
     )
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=new_access_token.encode(),
-        extra={
-            **error_code.update_tokens,
-            'access_token': new_access_token
-        },
+    raise litestar_raise(
+        error_model=error.UpdateTokens,
         headers={
             "Set-Cookie":
-                f"refresh_token={new_refresh_token.encode()}; HttpOnly; Path=/; Secure"
+                f"refresh_token={new_refresh_token.encode()}; HttpOnly; Path=/; Secure",
+            "Authorization": f"Bearer {new_access_token.encode}"
         }
     )
