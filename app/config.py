@@ -12,8 +12,6 @@ from typing import Mapping
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
 
-from app.caches.base import RedisAsyncCache
-from app.caches.configs import RedisConfig
 from app.db.sqlalchemy.base import AsyncSQLAlchemyDB
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
 from app.mailers.base import AsyncSMTPMailer
@@ -86,11 +84,6 @@ EMAIL_DELETE_TEAM_SUBJECT: Mapping[Language, str] = MappingProxyType({
 DataBase = AsyncSQLAlchemyDB
 DataBaseConfig = SQLAlchemyDBConfig(
     db_url=DATABASE_URL
-)
-
-Cache = RedisAsyncCache
-CacheConfig = RedisConfig(
-    logger=logger
 )
 
 Mailer = AsyncSMTPMailer

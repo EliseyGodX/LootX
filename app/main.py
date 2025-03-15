@@ -10,10 +10,9 @@ from litestar.di import Provide
 from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
 
-from app.caches.base import BaseAsyncTTLCache
-from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, DataBase,
-                        DataBaseConfig, Mailer, MailerConfig, TaskManager,
-                        TaskManagerConfig, Token, TokenConfig, allow_origins)
+from app.config import (SERVICE_NAME, VERSION, DataBase, DataBaseConfig,
+                        Mailer, MailerConfig, TaskManager, TaskManagerConfig,
+                        Token, TokenConfig, allow_origins)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.dependencies import auth_client, get_language
@@ -32,7 +31,6 @@ from app.types import UserId
 @asynccontextmanager
 async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.db = DataBase(DataBaseConfig)
-    app.state.cache = Cache(CacheConfig)
     app.state.mailer = Mailer(MailerConfig)
     app.state.task_manager = TaskManager(
         TaskManagerConfig,
@@ -43,14 +41,12 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.token_type = Token
     app.state.token_config = TokenConfig
     await app.state.db.connect()
-    await app.state.cache.connect()
     await app.state.mailer.connect()
     await app.state.task_manager.connect()
 
     yield
 
     await app.state.db.close()
-    await app.state.cache.close()
     await app.state.mailer.close()
     await app.state.task_manager.close()
 
@@ -62,10 +58,6 @@ async def del_inactive_user_task(user_id: UserId) -> None:
 
 def provide_db() -> BaseAsyncDB:
     return app.state.db
-
-
-def provide_cache() -> BaseAsyncTTLCache:
-    return app.state.cache
 
 
 def provide_mailer() -> BaseAsyncMailer:
@@ -108,7 +100,6 @@ app = Litestar(
     ),
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
-        'cache': Provide(provide_cache, sync_to_thread=False),
         'mailer': Provide(provide_mailer, sync_to_thread=False),
         'task_manager': Provide(provide_task_manager, sync_to_thread=False),
         'token_type': Provide(provide_token_type, sync_to_thread=False),

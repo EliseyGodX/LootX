@@ -18,18 +18,38 @@ from app.mailers.base import NonExistentEmail
 from app.tokens.base import (DeleteTeamTokenPayload, create_delete_team_token,
                              verify_delete_team_token)
 from app.tokens.payloads import AccessTokenPayload
-from app.types import DeleteTeamToken
+from app.types import DeleteTeamToken, TeamId
 
 
 class TeamController(BaseController[TeamConfig]):
     config = TeamConfig()
     path = '/team'
 
+    @get('/{team_id:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    }, tags=[tags.team_handler])
+    async def get_team_by_id(self, db: DataBase, team_id: TeamId) -> ResponseTeamDTO:
+        try:
+            team = await db.get_team(team_id)
+            return ResponseTeamDTO(
+                id=team.id,
+                name=team.name,
+                addon=team.addon,
+                is_vip=team.is_vip,
+                vip_end=team.vip_end,
+                owner_id=team.owner_id,
+                password=team.password
+            )
+        except TeamsNotExistsError:
+            raise litestar_raise(error.TeamNotExists)
+
     @get('/{name:str}', responses={
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.auth_handler])
+    }, tags=[tags.team_handler])
     async def get_team_by_name(self, db: DataBase, name: str) -> ResponseTeamDTO:
         try:
             team = await db.get_team_by_name(name)
@@ -56,7 +76,7 @@ class TeamController(BaseController[TeamConfig]):
         409: litestar_response_spec(examples=[
             Example('TeamNameNotUnique', value=error.TeamNameNotUnique())
         ])
-    }, tags=[tags.requires_authorization, tags.auth_handler])
+    }, tags=[tags.requires_authorization, tags.team_handler])
     async def create_team(
         self, auth_client: AccessTokenPayload, db: DataBase, data: RequestCreateTeamDTO
     ) -> ResponseTeamDTO:
@@ -94,7 +114,7 @@ class TeamController(BaseController[TeamConfig]):
             Example('EmailNonExistent', value=error.EmailNonExistent()),
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization, tags.auth_handler])
+    }, tags=[tags.requires_authorization, tags.team_handler])
     async def delete_request_team(
         self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
         token_type: type[Token], token_config: TokenConfigType, lang: Language,
@@ -141,7 +161,7 @@ class TeamController(BaseController[TeamConfig]):
             Example('DeleteTeamTokenInvalid', value=error.DeleteTeamTokenInvalid()),  # noqa: E501
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization, tags.auth_handler])
+    }, tags=[tags.requires_authorization, tags.team_handler])
     async def delete_team(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
         token_config: TokenConfigType, delete_team_token: DeleteTeamToken
@@ -182,7 +202,7 @@ class TeamController(BaseController[TeamConfig]):
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization, tags.auth_handler])
+    }, tags=[tags.requires_authorization, tags.team_handler])
     async def update_team(
         self, db: DataBase, auth_client: AccessTokenPayload, team_id: str,
         data: RequestUpdateTeamDTO

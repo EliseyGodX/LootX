@@ -92,11 +92,9 @@ class RaiderController(BaseController[RaiderConfig]):
             Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
             Example('UpdateTokens', value=error.UpdateTokens())
         ]),
-        403: litestar_response_spec(examples=[
-            Example('UserNotTeamOwner', value=error.RaiderNotExists())
-        ]),
         422: litestar_response_spec(examples=[
-            Example('TeamNotExists', value=error.TeamNotExists())
+            Example('TeamNotExists', value=error.TeamNotExists()),
+            Example('UserNotTeamOwner', value=error.RaiderNotExists())
         ])
     }, tags=[tags.requires_authorization, tags.raider_handler])
     async def delete_raider(

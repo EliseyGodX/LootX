@@ -35,7 +35,7 @@ class AuthController(BaseController[AuthConfig]):
             Example('EmailNonExistent', value=error.EmailNonExistent())
         ])
     }, tags=[tags.auth_handler])
-    async def registration_post(
+    async def registration(
         self, db: DataBase, mailer: Mailer, lang: Language, token_type: type[Token],
         token_config: TokenConfigType, task_manager: TaskManager,
         data: RequestRegistrationDTO
@@ -135,7 +135,7 @@ class AuthController(BaseController[AuthConfig]):
             Example('InvalidCredentials', value=error.InvalidCredentials())
         ])
     }, tags=[tags.auth_handler])
-    async def auth(
+    async def authentication(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         data: RequestAuthDTO
     ) -> ResponseAccessRefreshTokensDTO:
