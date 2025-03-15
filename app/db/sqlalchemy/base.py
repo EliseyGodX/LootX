@@ -1,3 +1,5 @@
+# flake8-in-file-ignores: noqa: WPS204
+
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,15 +12,16 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.db.abc.base import BaseAsyncDB, get_id
-from app.db.abc.models import TeamProtocol, UserProtocol
-from app.db.enums import EnumAddons
+from app.db.abc.models import RaiderProtocol, TeamProtocol, UserProtocol
+from app.db.enums import EnumAddons, EnumClasses
 from app.db.exc import (ActivateUserError, DatabaseError,
-                        InvalidCredentialsError, TeamsNotExistsError,
-                        UniqueEmailError, UniqueTeamNameError,
-                        UniqueUsernameError, UserNotFoundError)
+                        InvalidCredentialsError, RaiderNotFoundError,
+                        TeamsNotExistsError, UniqueEmailError,
+                        UniqueTeamNameError, UniqueUsernameError,
+                        UserNotFoundError, RaiderNotUnique)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Team, User
-from app.types import Sentinel, TeamId, UserId, Username
+from app.db.sqlalchemy.models import Base, Raider, Team, User
+from app.types import RaiderId, Sentinel, TeamId, UserId, Username
 
 
 class DatabaseWriteError(Exception): ...
@@ -255,6 +258,20 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 )
             return team  # type: ignore
 
+    async def get_team_owner(self, team_id: TeamId) -> UserProtocol:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(User)
+                .join(Team, Team.owner_id == User.id)
+                .where(Team.id == team_id)
+            )
+            owner = (await session.execute(stmt)).scalar_one_or_none()
+            if not owner:
+                raise TeamsNotExistsError(
+                    f"Owner for team with id {team_id} does not exist"
+                )
+            return owner  # type: ignore
+
     async def verify_username_password(
         self, username: Username, password: str
     ) -> UserId:
@@ -270,6 +287,54 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 return user.id
             else:
                 raise InvalidCredentialsError("Invalid username or password")
+
+    async def get_raider(self, id: RaiderId) -> RaiderProtocol:
+        async with self.get_read_session() as session:
+            raider = await session.get(Raider, id)
+            if raider:
+                return raider  # type: ignore
+            else:
+                raise RaiderNotFoundError(f"Raider with id {id} does not exist")
+
+    async def create_raider(
+        self, name: str, team_id: TeamId, class_name: EnumClasses,
+        is_active: bool = True, id: RaiderId = Sentinel
+    ) -> RaiderProtocol:
+        async with self.get_write_session() as session:
+            stmt = (
+                select(Raider.id)
+                .where(
+                    Raider.is_active,
+                    Raider.team_id == team_id,
+                    Raider.name == name,
+                    Raider.class_name == class_name
+                )
+            )
+            existing_raider = (await session.execute(stmt)).first()
+            if existing_raider:
+                raise RaiderNotUnique(
+                    'Active raider with the same name or class already exists'
+                    f'in the team ({existing_raider})'
+                )
+
+            try:
+                raider = Raider(
+                    id=get_id() if id is Sentinel else id,
+                    name=name,
+                    team_id=team_id,
+                    class_name=class_name,
+                    is_active=is_active
+                )
+                session.add(raider)
+                return raider  # type: ignore
+            except IntegrityError as e:
+                raise DatabaseError('Error creating raider') from e
+
+    async def set_raider_inactive(self, id: RaiderId) -> None:
+        raider = await self.get_raider(id)
+        async with self.get_write_session() as session:
+            raider.is_active = False
+            session.add(raider)
 
     async def close(self) -> None:
         await self.engine.dispose()

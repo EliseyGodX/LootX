@@ -29,7 +29,7 @@ class TeamController(BaseController[TeamConfig]):
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    })
+    }, tags=[tags.auth_handler])
     async def get_team_by_name(self, db: DataBase, name: str) -> ResponseTeamDTO:
         try:
             team = await db.get_team_by_name(name)
@@ -56,7 +56,7 @@ class TeamController(BaseController[TeamConfig]):
         409: litestar_response_spec(examples=[
             Example('TeamNameNotUnique', value=error.TeamNameNotUnique())
         ])
-    }, tags=[tags.requires_authorization])
+    }, tags=[tags.requires_authorization, tags.auth_handler])
     async def create_team(
         self, auth_client: AccessTokenPayload, db: DataBase, data: RequestCreateTeamDTO
     ) -> ResponseTeamDTO:
@@ -94,7 +94,7 @@ class TeamController(BaseController[TeamConfig]):
             Example('EmailNonExistent', value=error.EmailNonExistent()),
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization])
+    }, tags=[tags.requires_authorization, tags.auth_handler])
     async def delete_request_team(
         self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
         token_type: type[Token], token_config: TokenConfigType, lang: Language,
@@ -134,11 +134,14 @@ class TeamController(BaseController[TeamConfig]):
             Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
             Example('UpdateTokens', value=error.UpdateTokens())
         ]),
+        403: litestar_response_spec(examples=[
+            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
+        ]),
         422: litestar_response_spec(examples=[
             Example('DeleteTeamTokenInvalid', value=error.DeleteTeamTokenInvalid()),  # noqa: E501
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization])
+    }, tags=[tags.requires_authorization, tags.auth_handler])
     async def delete_team(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
         token_config: TokenConfigType, delete_team_token: DeleteTeamToken
@@ -156,38 +159,54 @@ class TeamController(BaseController[TeamConfig]):
             raise litestar_raise(error.DeleteTeamTokenInvalid)
 
         try:
-            team = await db.get_team_with_owner(delete_team_token_payload.sub)
+            owner = await db.get_team_owner(delete_team_token_payload.sub)
         except TeamsNotExistsError:
             raise litestar_raise(error.TeamNotExists)
 
-        if team.owner.id != auth_client.sub:
+        if owner.id != auth_client.sub:
             raise litestar_raise(error.UserNotTeamOwner)
 
         await db.del_team(delete_team_token_payload.sub)
 
     @patch('/{team_id:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
+            Example('UpdateTokens', value=error.UpdateTokens())
+        ]),
+        403: litestar_response_spec(examples=[
+            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
+        ]),
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    })
+    }, tags=[tags.requires_authorization, tags.auth_handler])
     async def update_team(
-        self, db: DataBase, team_id: str, data: RequestUpdateTeamDTO
+        self, db: DataBase, auth_client: AccessTokenPayload, team_id: str,
+        data: RequestUpdateTeamDTO
     ) -> ResponseTeamDTO:
         try:
-            team = await db.update_team(
-                id=team_id,
-                name=data.name,
-                addon=data.addon,
-                password=data.password
-            )
-            return ResponseTeamDTO(
-                id=team.id,
-                name=team.name,
-                addon=team.addon,
-                is_vip=team.is_vip,
-                vip_end=team.vip_end,
-                owner_id=team.owner_id,
-                password=team.password,
-            )
+            owner = await db.get_team_owner(team_id)
         except TeamsNotExistsError:
             raise litestar_raise(error.TeamNotExists)
+
+        if owner.id != auth_client.sub:
+            raise litestar_raise(error.UserNotTeamOwner)
+
+        team = await db.update_team(
+            id=team_id,
+            name=data.name,
+            addon=data.addon,
+            password=data.password
+        )
+        return ResponseTeamDTO(
+            id=team.id,
+            name=team.name,
+            addon=team.addon,
+            is_vip=team.is_vip,
+            vip_end=team.vip_end,
+            owner_id=team.owner_id,
+            password=team.password,
+        )

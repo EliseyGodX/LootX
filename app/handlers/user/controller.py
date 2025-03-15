@@ -28,7 +28,7 @@ class UserController(BaseController[UserConfig]):
         422: litestar_response_spec(examples=[
             Example('UserNotExists', value=error.UserNotExists())
         ])
-    })
+    }, tags=[tags.user_handler])
     async def get_user_by_username(
         self, db: DataBase, username: Username
     ) -> ResponseUserDTO:
@@ -48,7 +48,7 @@ class UserController(BaseController[UserConfig]):
         422: litestar_response_spec(examples=[
             Example('UserNotExists', value=error.UserNotExists())
         ])
-    })
+    }, tags=[tags.user_handler])
     async def get_user_by_id(
         self, db: DataBase, user_id: UserId
     ) -> ResponseUserDTO:
@@ -76,7 +76,7 @@ class UserController(BaseController[UserConfig]):
             Example('UserNotExists', value=error.UserNotExists()),
             Example('EmailNonExistent', value=error.EmailNonExistent())
         ])
-    }, tags=[tags.requires_authorization])
+    }, tags=[tags.requires_authorization, tags.user_handler])
     async def change_password_request(
         self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
         lang: Language, token_type: type[Token], token_config: TokenConfigType
@@ -118,7 +118,7 @@ class UserController(BaseController[UserConfig]):
         422: litestar_response_spec(examples=[
             Example('ChangePasswordTokenInvalid', value=error.ChangePasswordTokenInvalid())  # noqa
         ])
-    }, tags=[tags.requires_authorization])
+    }, tags=[tags.requires_authorization, tags.user_handler])
     async def change_password(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
         token_config: TokenConfigType, data: RequestChangePasswordDTO,

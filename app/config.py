@@ -136,8 +136,8 @@ class AuthConfig(BaseConfig):
     password_max_length: int = 24
 
     registration_token_exp: timedelta = timedelta(minutes=5)
-    access_token_exp: timedelta = timedelta(days=2)
-    refresh_token_exp: timedelta = timedelta(days=2, hours=12)  # noqa: WPS432
+    access_token_exp: timedelta = timedelta(hours=1)
+    refresh_token_exp: timedelta = timedelta(weeks=5)
 
     del_inactive_user_after: timedelta = timedelta(minutes=5)
 
@@ -155,3 +155,9 @@ class TeamConfig(BaseConfig):
 @dataclass(frozen=True)
 class UserConfig(BaseConfig):
     change_password_token_exp: timedelta = timedelta(minutes=5)
+
+
+@dataclass(frozen=True)
+class RaiderConfig(BaseConfig):
+    name_min_length: int = 2
+    name_max_length: int = 12

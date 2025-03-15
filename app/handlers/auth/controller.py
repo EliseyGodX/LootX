@@ -4,6 +4,7 @@ from litestar.handlers import get, post
 from litestar.openapi.spec import Example
 
 from app import errors as error
+from app import openapi_tags as tags
 from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
                         AuthConfig, DataBase, Language, Mailer, TaskManager,
                         Token, TokenConfigType)
@@ -33,7 +34,7 @@ class AuthController(BaseController[AuthConfig]):
         422: litestar_response_spec(examples=[
             Example('EmailNonExistent', value=error.EmailNonExistent())
         ])
-    })
+    }, tags=[tags.auth_handler])
     async def registration_post(
         self, db: DataBase, mailer: Mailer, lang: Language, token_type: type[Token],
         token_config: TokenConfigType, task_manager: TaskManager,
@@ -87,7 +88,7 @@ class AuthController(BaseController[AuthConfig]):
         422: litestar_response_spec(examples=[
             Example('RegistrationTokenInvalid', value=error.RegistrationTokenInvalid())  # noqa
         ])
-    })
+    }, tags=[tags.auth_handler])
     async def verify_email(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         registration_token: str
@@ -133,7 +134,7 @@ class AuthController(BaseController[AuthConfig]):
         401: litestar_response_spec(examples=[
             Example('InvalidCredentials', value=error.InvalidCredentials())
         ])
-    })
+    }, tags=[tags.auth_handler])
     async def auth(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         data: RequestAuthDTO

@@ -6,9 +6,9 @@ from typing import Generic, Literal, TypeVar
 from ulid import ULID
 
 from app.db.abc.configs import BaseDBConfig
-from app.db.abc.models import TeamProtocol, UserProtocol
+from app.db.abc.models import RaiderProtocol, TeamProtocol, UserProtocol
 from app.db.enums import EnumAddons
-from app.types import Sentinel, TeamId, UserId, Username
+from app.types import RaiderId, Sentinel, TeamId, UserId, Username
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
 
@@ -89,6 +89,12 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     async def verify_username_password(
         self, username: Username, password: str
     ) -> UserId: ...
+
+    @abstractmethod
+    async def set_raider_inactive(self, id: RaiderId) -> None: ...
+
+    @abstractmethod
+    async def get_raider(self, id: RaiderId) -> RaiderProtocol: ...
 
     @abstractmethod
     async def close(self) -> None: ...

@@ -18,7 +18,8 @@ from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.dependencies import auth_client, get_language
 from app.handlers.auth.controller import AuthController
-from app.handlers.team.controllers import TeamController
+from app.handlers.raider.controller import RaiderController
+from app.handlers.team.controller import TeamController
 from app.handlers.user.controller import UserController
 from app.mailers.base import BaseAsyncMailer, MailerError
 from app.task_managers.base import BaseAsyncTaskManager, Tasks
@@ -100,7 +101,7 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 
 app = Litestar(
-    route_handlers=[AuthController, TeamController, UserController],
+    route_handlers=[AuthController, TeamController, UserController, RaiderController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
         version=VERSION

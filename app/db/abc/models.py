@@ -36,6 +36,7 @@ class RaiderProtocol(Protocol):
     name: str
     team_id: TeamId
     class_name: EnumClasses
+    is_active: bool
     team: 'TeamProtocol'
     queues: list['QueueProtocol']
 

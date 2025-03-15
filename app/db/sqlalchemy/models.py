@@ -97,6 +97,7 @@ class Raider(Base):
     class_name: Mapped[EnumClasses] = mapped_column(
         SAEnum(EnumClasses, name='classes'), nullable=False
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     team: Mapped['Team'] = relationship(back_populates='raiders')
     queues: Mapped[list['Queue']] = relationship(back_populates='raider')
 
