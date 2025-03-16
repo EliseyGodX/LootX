@@ -10,8 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.db.abc.base import get_id
-from app.db.enums import EnumAddons, EnumClasses
-from app.types import ItemId, LogId, QueueId, RaiderId, TeamId, UserId
+from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
+from app.types import WoWItemId, LogId, QueueId, RaiderId, TeamId, UserId
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -102,18 +102,22 @@ class Raider(Base):
     queues: Mapped[list['Queue']] = relationship(back_populates='raider')
 
 
-class Item(Base):
-    __tablename__ = 'items'
+class WoWItem(Base):
+    __tablename__ = 'wow_items'
 
-    id: Mapped[ItemId] = mapped_column(String, primary_key=True, default=get_id)
+    id: Mapped[WoWItemId] = mapped_column(String, primary_key=True, default=get_id)
     wow_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     addon: Mapped[EnumAddons] = mapped_column(
         SAEnum(EnumAddons, name='addons'), nullable=False
     )
+    lang: Mapped[EnumLanguages] = mapped_column(
+        SAEnum(EnumLanguages, name='languages', nullable=False)
+    )
     html_tooltip: Mapped[str] = mapped_column(String, nullable=False)
-    icon_id: Mapped[str] = mapped_column(String, nullable=False)
-    logs: Mapped[list['Log']] = relationship(back_populates='item')
-    queues: Mapped[list['Queue']] = relationship(back_populates='item')
+    icon_url: Mapped[str] = mapped_column(String, nullable=False)
+    origin_link: Mapped[str] = mapped_column(String, nullable=False)
+    logs: Mapped[list['Log']] = relationship(back_populates='wow_item')
+    queues: Mapped[list['Queue']] = relationship(back_populates='wow_item')
 
 
 class Queue(Base):
@@ -125,10 +129,12 @@ class Queue(Base):
     raider_id: Mapped[RaiderId] = mapped_column(
         ForeignKey('raiders.id'), nullable=False
     )
-    item_id: Mapped[ItemId] = mapped_column(ForeignKey('items.id'), nullable=False)
+    wow_item_id: Mapped[WoWItemId] = mapped_column(
+        ForeignKey('wow_items.id'), nullable=False
+    )
     team: Mapped['Team'] = relationship(back_populates='queues')
     raider: Mapped['Raider'] = relationship(back_populates='queues')
-    item: Mapped['Item'] = relationship(back_populates='queues')
+    wow_item: Mapped['WoWItem'] = relationship(back_populates='queues')
 
 
 class Log(Base):
@@ -137,8 +143,10 @@ class Log(Base):
     id: Mapped[LogId] = mapped_column(String, primary_key=True, default=get_id)
     team_id: Mapped[TeamId] = mapped_column(ForeignKey('teams.id'), nullable=False)
     user_id: Mapped[UserId] = mapped_column(ForeignKey('users.id'), nullable=False)
-    item_id: Mapped[ItemId] = mapped_column(ForeignKey('items.id'), nullable=False)
+    wow_item_id: Mapped[WoWItemId] = mapped_column(
+        ForeignKey('wow_items.id'), nullable=False
+    )
     data: Mapped[str] = mapped_column(String)
     team: Mapped['Team'] = relationship(back_populates='logs')
     user: Mapped['User'] = relationship(back_populates='logs')
-    item: Mapped['Item'] = relationship(back_populates='logs')
+    wow_item: Mapped['WoWItem'] = relationship(back_populates='logs')

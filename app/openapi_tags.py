@@ -1,7 +1,6 @@
 
-requires_authorization = 'requires authorization'
-
-auth_handler = 'auth'
-team_handler = 'team'
-user_handler = 'user'
-raider_handler = 'raider'
+auth_handler = 'Route: auth'
+team_handler = 'Route: team'
+user_handler = 'Route: user'
+raider_handler = 'Route: raider'
+item_handler = 'Route: wow item'

@@ -1,4 +1,4 @@
-# flake8-in-file-ignores: noqa: WPS204
+# flake8-in-file-ignores: noqa: WPS204, WPS203
 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -12,16 +12,19 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.db.abc.base import BaseAsyncDB, get_id
-from app.db.abc.models import RaiderProtocol, TeamProtocol, UserProtocol
-from app.db.enums import EnumAddons, EnumClasses
+from app.db.abc.models import (RaiderProtocol, TeamProtocol, UserProtocol,
+                               WoWItemProtocol)
+from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
 from app.db.exc import (ActivateUserError, DatabaseError,
-                        InvalidCredentialsError, RaiderNotFoundError,
+                        InvalidCredentialsError, ItemNotFoundError,
+                        RaiderNotFoundError, RaiderNotUnique,
                         TeamsNotExistsError, UniqueEmailError,
                         UniqueTeamNameError, UniqueUsernameError,
-                        UserNotFoundError, RaiderNotUnique)
+                        UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Raider, Team, User
-from app.types import RaiderId, Sentinel, TeamId, UserId, Username
+from app.db.sqlalchemy.models import Base, Raider, Team, User, WoWItem
+from app.db.wow_api.base import BaseAsyncWoWAPI, WoWAPIItem
+from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
 
 class DatabaseWriteError(Exception): ...
@@ -279,7 +282,8 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             stmt = (
                 select(User)
                 .where(
-                    User.username == username
+                    User.username == username,
+                    User.is_active
                 )
             )
             user = (await session.execute(stmt)).scalar_one_or_none()
@@ -336,6 +340,44 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             raider.is_active = False
             session.add(raider)
 
+    async def get_wow_item(self, id: WoWItemId) -> WoWItemProtocol:
+        async with self.get_read_session() as session:
+            wow_item = await session.get(WoWItem, id)
+            if wow_item:
+                return wow_item  # type: ignore
+            else:
+                raise ItemNotFoundError(f"Item with id {id} does not exist")
+
+    async def get_wow_item_by_wow_id(
+        self, wow_id: int, addon: EnumAddons, lang: EnumLanguages,
+        wow_api: BaseAsyncWoWAPI
+    ) -> WoWItemProtocol | None:
+        use_wow_api = False
+
+        async with self.get_read_session() as session:
+            stmt = select(WoWItem).where(
+                WoWItem.wow_id == wow_id,
+                WoWItem.addon == addon,
+                WoWItem.lang == lang
+            )
+            wow_item = (await session.execute(stmt)).scalar_one_or_none()
+
+        if not wow_item:
+            wow_item = self._wowapi_item_to_wow_item(
+                await wow_api.get_item(
+                    id=wow_id,
+                    addon=addon,
+                    lang=lang
+                )
+            )
+            use_wow_api = True
+
+        if use_wow_api and wow_item:
+            async with self.get_write_session() as session:
+                session.add(wow_item)
+
+        return wow_item  # type: ignore
+
     async def close(self) -> None:
         await self.engine.dispose()
 
@@ -356,3 +398,17 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             raise ValueError('Error raised due to unknown fields in the sequence')
 
         raise ValueError('Argument e of unsupported type')
+
+    def _wowapi_item_to_wow_item(
+        self, wow_api_item: WoWAPIItem | None
+    ) -> WoWItem | None:
+        if not wow_api_item:
+            return None
+        return WoWItem(
+            wow_id=wow_api_item.wow_id,
+            addon=wow_api_item.addon,
+            lang=wow_api_item.lang,
+            html_tooltip=wow_api_item.html_tooltip,
+            icon_url=wow_api_item.icon_url,
+            origin_link=wow_api_item.origin_link
+        )

@@ -3,8 +3,8 @@
 from datetime import datetime
 from typing import Protocol
 
-from app.db.enums import EnumAddons, EnumClasses
-from app.types import ItemId, LogId, QueueId, RaiderId, TeamId, UserId
+from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
+from app.types import WoWItemId, LogId, QueueId, RaiderId, TeamId, UserId
 
 
 class UserProtocol(Protocol):
@@ -41,12 +41,14 @@ class RaiderProtocol(Protocol):
     queues: list['QueueProtocol']
 
 
-class ItemProtocol(Protocol):
-    id: ItemId
+class WoWItemProtocol(Protocol):
+    id: WoWItemId
     wow_id: int
     addon: EnumAddons
+    lang: EnumLanguages
     html_tooltip: str
-    icon_id: str
+    icon_url: str
+    origin_link: str
     logs: list['LogProtocol']
     queues: list['QueueProtocol']
 
@@ -56,18 +58,18 @@ class QueueProtocol(Protocol):
     position: int
     team_id: TeamId
     raider_id: RaiderId
-    item_id: ItemId
+    item_id: WoWItemId
     team: 'TeamProtocol'
     raider: 'RaiderProtocol'
-    item: 'ItemProtocol'
+    item: 'WoWItemProtocol'
 
 
 class LogProtocol(Protocol):
     id: LogId
     team_id: TeamId
     user_id: UserId
-    item_id: ItemId
+    item_id: WoWItemId
     data: str
     team: 'TeamProtocol'
     user: 'UserProtocol'
-    item: 'ItemProtocol'
+    item: 'WoWItemProtocol'

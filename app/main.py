@@ -9,14 +9,18 @@ from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
+from litestar.openapi.plugins import SwaggerRenderPlugin
 
 from app.config import (SERVICE_NAME, VERSION, DataBase, DataBaseConfig,
                         Mailer, MailerConfig, TaskManager, TaskManagerConfig,
-                        Token, TokenConfig, allow_origins)
+                        Token, TokenConfig, WoWAPI, WoWAPIConfig,
+                        allow_origins)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
+from app.db.wow_api.base import BaseAsyncWoWAPI
 from app.dependencies import auth_client, get_language
 from app.handlers.auth.controller import AuthController
+from app.handlers.item.controller import ItemController
 from app.handlers.raider.controller import RaiderController
 from app.handlers.team.controller import TeamController
 from app.handlers.user.controller import UserController
@@ -32,6 +36,7 @@ from app.types import UserId
 async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.db = DataBase(DataBaseConfig)
     app.state.mailer = Mailer(MailerConfig)
+    app.state.wow_api = WoWAPI(WoWAPIConfig)
     app.state.task_manager = TaskManager(
         TaskManagerConfig,
         Tasks(
@@ -42,12 +47,14 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.token_config = TokenConfig
     await app.state.db.connect()
     await app.state.mailer.connect()
+    await app.state.wow_api.connect()
     await app.state.task_manager.connect()
 
     yield
 
     await app.state.db.close()
     await app.state.mailer.close()
+    await app.state.wow_api.close()
     await app.state.task_manager.close()
 
 
@@ -72,6 +79,10 @@ def provide_token_config() -> BaseTokenConfig:
     return app.state.token_config
 
 
+def provide_wow_api() -> BaseAsyncWoWAPI:
+    return app.state.wow_api
+
+
 def provide_task_manager() -> BaseAsyncTaskManager:
     return app.state.task_manager
 
@@ -93,15 +104,18 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 
 app = Litestar(
-    route_handlers=[AuthController, TeamController, UserController, RaiderController],
+    route_handlers=[AuthController, TeamController, UserController, RaiderController,
+                    ItemController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
-        version=VERSION
+        version=VERSION,
+        render_plugins=[SwaggerRenderPlugin()]
     ),
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
         'mailer': Provide(provide_mailer, sync_to_thread=False),
         'task_manager': Provide(provide_task_manager, sync_to_thread=False),
+        'wow_api': Provide(provide_wow_api, sync_to_thread=False),
         'token_type': Provide(provide_token_type, sync_to_thread=False),
         'token_config': Provide(provide_token_config, sync_to_thread=False),
         'lang': Provide(get_language, sync_to_thread=False),

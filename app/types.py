@@ -14,6 +14,6 @@ UserId: TypeAlias = str
 Username: TypeAlias = str
 TeamId: TypeAlias = str
 RaiderId: TypeAlias = str
-ItemId: TypeAlias = str
+WoWItemId: TypeAlias = str
 QueueId: TypeAlias = str
 LogId: TypeAlias = str

@@ -6,9 +6,11 @@ from typing import Generic, Literal, TypeVar
 from ulid import ULID
 
 from app.db.abc.configs import BaseDBConfig
-from app.db.abc.models import RaiderProtocol, TeamProtocol, UserProtocol
-from app.db.enums import EnumAddons
-from app.types import RaiderId, Sentinel, TeamId, UserId, Username
+from app.db.abc.models import (RaiderProtocol, TeamProtocol, UserProtocol,
+                               WoWItemProtocol)
+from app.db.enums import EnumAddons, EnumLanguages
+from app.db.wow_api.base import BaseAsyncWoWAPI
+from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
 DBConfig = TypeVar('DBConfig', bound=BaseDBConfig)
 
@@ -95,6 +97,15 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
 
     @abstractmethod
     async def get_raider(self, id: RaiderId) -> RaiderProtocol: ...
+
+    @abstractmethod
+    async def get_wow_item(self, id: WoWItemId) -> WoWItemProtocol: ...
+
+    @abstractmethod
+    async def get_wow_item_by_wow_id(
+        self, wow_id: int, addon: EnumAddons, lang: EnumLanguages,
+        wow_api: BaseAsyncWoWAPI
+    ) -> WoWItemProtocol | None: ...
 
     @abstractmethod
     async def close(self) -> None: ...

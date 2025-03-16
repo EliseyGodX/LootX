@@ -2,6 +2,7 @@
 
 from litestar.handlers import get, post
 from litestar.openapi.spec import Example
+from litestar.response import Response
 
 from app import errors as error
 from app import openapi_tags as tags
@@ -12,8 +13,7 @@ from app.db.exc import (ActivateUserError, InvalidCredentialsError,
                         UniqueEmailError, UniqueUsernameError)
 from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.abc.controller import BaseController
-from app.handlers.auth.dto import (RequestAuthDTO, RequestRegistrationDTO,
-                                   ResponseAccessRefreshTokensDTO)
+from app.handlers.auth.dto import RequestAuthDTO, RequestRegistrationDTO
 from app.mailers.base import NonExistentEmail
 from app.task_managers.base import TaskManagerError
 from app.tokens.base import (DecodeTokenError, create_access_token,
@@ -92,7 +92,7 @@ class AuthController(BaseController[AuthConfig]):
     async def verify_email(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         registration_token: str
-    ) -> ResponseAccessRefreshTokensDTO:
+    ) -> Response[None]:
         try:
             encode_registration_token = verify_registration_token(
                 token=registration_token,
@@ -125,9 +125,13 @@ class AuthController(BaseController[AuthConfig]):
             sub=user_id
         )
 
-        return ResponseAccessRefreshTokensDTO(
-            access_token=access_token.encode(),
-            refresh_token=refresh_token.encode()
+        return Response(
+            content=None,
+            headers={
+                "Set-Cookie":
+                    f"refresh_token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
+                "Authorization": f"Bearer {access_token.encode}"
+            }
         )
 
     @post('/', responses={
@@ -138,7 +142,7 @@ class AuthController(BaseController[AuthConfig]):
     async def authentication(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
         data: RequestAuthDTO
-    ) -> ResponseAccessRefreshTokensDTO:
+    ) -> Response[None]:
         try:
             user_id = await db.verify_username_password(
                 username=data.username,
@@ -161,7 +165,11 @@ class AuthController(BaseController[AuthConfig]):
             sub=user_id
         )
 
-        return ResponseAccessRefreshTokensDTO(
-            access_token=access_token.encode(),
-            refresh_token=refresh_token.encode()
+        return Response(
+            content=None,
+            headers={
+                "Set-Cookie":
+                    f"refresh_token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
+                "Authorization": f"Bearer {access_token.encode}"
+            }
         )

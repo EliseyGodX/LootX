@@ -23,3 +23,15 @@ class EnumAddons(Enum):
     cata = 'cata'
     tbc = 'tbc'
     wotlk = 'wotlk'
+
+
+class EnumLanguages(Enum):
+    ru = 'ru'
+    de = 'de'
+    en = 'en'
+    es = 'es'
+    fr = 'fr'
+    it = 'it'
+    pt = 'pt'
+    ko = 'ko'
+    cn = 'cn'

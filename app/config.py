@@ -14,6 +14,8 @@ from kapusta import AlchemyCRUD
 
 from app.db.sqlalchemy.base import AsyncSQLAlchemyDB
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
+from app.db.wow_api.base import WoWHeadAPI
+from app.db.wow_api.configs import WoWHeadAPIConfig
 from app.mailers.base import AsyncSMTPMailer
 from app.mailers.configs import SMTPConfig
 from app.task_managers.base import KapustaTaskManager
@@ -40,7 +42,7 @@ VERSION = '0.0.0'
 APP_PATH = Path(__file__).parent
 ROOT_PATH = APP_PATH.parent
 
-allow_origins = ["http://localhost:3000"]
+allow_origins = ["http://26.160.241.12:5173", "http://localhost:5173"]
 
 load_dotenv(ROOT_PATH / '.env')
 
@@ -114,6 +116,13 @@ TaskManagerConfig = KapustaConfig(
     default_timeout=0
 )
 
+WoWAPI = WoWHeadAPI
+WoWAPIConfig = WoWHeadAPIConfig(
+    logger=logger,
+    url='https://www.wowhead.com/{addon}/{lang}/item={id}&xml',
+    icon_url='https://wow.zamimg.com/images/wow/icons/large/{icon}.jpg'
+)
+
 
 @dataclass(frozen=True)
 class BaseConfig:
@@ -154,3 +163,8 @@ class UserConfig(BaseConfig):
 class RaiderConfig(BaseConfig):
     name_min_length: int = 2
     name_max_length: int = 12
+
+
+@dataclass(frozen=True)
+class ItemConfig(BaseConfig):
+    ...

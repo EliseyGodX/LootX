@@ -53,7 +53,7 @@ class RaiderController(BaseController[RaiderConfig]):
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
-    }, tags=[tags.requires_authorization, tags.raider_handler])
+    }, tags=[tags.raider_handler])
     async def create_raider(
         self, auth_client: AccessTokenPayload, db: DataBase,
         data: RequestCreateRaiderDTO
@@ -96,7 +96,7 @@ class RaiderController(BaseController[RaiderConfig]):
             Example('TeamNotExists', value=error.TeamNotExists()),
             Example('UserNotTeamOwner', value=error.RaiderNotExists())
         ])
-    }, tags=[tags.requires_authorization, tags.raider_handler])
+    }, tags=[tags.raider_handler])
     async def delete_raider(
         self, auth_client: AccessTokenPayload, db: DataBase, raider_id: RaiderId
     ) -> None:

@@ -198,6 +198,15 @@ class RaiderNotUnique(BaseError):
     }
 
 
+class ItemNotExists(BaseError):
+    status_code: int = 422
+    detail: str = HTTPStatus(422).phrase
+    extra: dict = {
+        'error_code': 22,
+        'message': 'Item not exists'
+    }
+
+
 def litestar_raise(
     error_model: type[BaseError], add_to_extra: Mapping[str, Any] = Sentinel,
     headers: dict[str, str] = Sentinel
