@@ -117,7 +117,6 @@ class WoWItem(Base):
     icon_url: Mapped[str] = mapped_column(String, nullable=False)
     origin_link: Mapped[str] = mapped_column(String, nullable=False)
     logs: Mapped[list['Log']] = relationship(back_populates='wow_item')
-    queues: Mapped[list['Queue']] = relationship(back_populates='wow_item')
 
 
 class Queue(Base):
@@ -129,12 +128,9 @@ class Queue(Base):
     raider_id: Mapped[RaiderId] = mapped_column(
         ForeignKey('raiders.id'), nullable=False
     )
-    wow_item_id: Mapped[WoWItemId] = mapped_column(
-        ForeignKey('wow_items.id'), nullable=False
-    )
+    wow_item_id: Mapped[int] = mapped_column(Integer, nullable=False)
     team: Mapped['Team'] = relationship(back_populates='queues')
     raider: Mapped['Raider'] = relationship(back_populates='queues')
-    wow_item: Mapped['WoWItem'] = relationship(back_populates='queues')
 
 
 class Log(Base):

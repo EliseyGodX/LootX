@@ -10,8 +10,8 @@ from app.config import (EMAIL_CHANGE_PASSWORD_BODY,
                         Mailer, Token, TokenConfigType, UserConfig)
 from app.db.exc import UserNotFoundError
 from app.errors import litestar_raise, litestar_response_spec
-from app.handlers.abc.controller import BaseController
-from app.handlers.user.dto import RequestChangePasswordDTO, ResponseUserDTO
+from app.handlers.controller import BaseController
+from app.handlers.dto import ChangeUserPasswordDTO, UserDTO
 from app.mailers.base import NonExistentEmail
 from app.tokens.base import (ChangePasswordTokenPayload, DecodeTokenError,
                              create_change_password_token,
@@ -31,15 +31,14 @@ class UserController(BaseController[UserConfig]):
     }, tags=[tags.user_handler])
     async def get_user_by_username(
         self, db: DataBase, username: Username
-    ) -> ResponseUserDTO:
+    ) -> UserDTO:
         try:
             user = await db.get_user_by_username(username)
-            return ResponseUserDTO(
+            return UserDTO(
                 id=user.id,
                 username=user.username,
                 email=user.email,
-                is_active=user.is_active,
-                password=user.password
+                is_active=user.is_active
             )
         except UserNotFoundError:
             raise litestar_raise(error.UserNotExists)
@@ -51,15 +50,14 @@ class UserController(BaseController[UserConfig]):
     }, tags=[tags.user_handler])
     async def get_user_by_id(
         self, db: DataBase, user_id: UserId
-    ) -> ResponseUserDTO:
+    ) -> UserDTO:
         try:
             user = await db.get_user(user_id)
-            return ResponseUserDTO(
+            return UserDTO(
                 id=user.id,
                 username=user.username,
                 email=user.email,
-                is_active=user.is_active,
-                password=user.password
+                is_active=user.is_active
             )
         except UserNotFoundError:
             raise litestar_raise(error.UserNotExists)
@@ -121,7 +119,7 @@ class UserController(BaseController[UserConfig]):
     }, tags=[tags.user_handler])
     async def change_password(
         self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
-        token_config: TokenConfigType, data: RequestChangePasswordDTO,
+        token_config: TokenConfigType, data: ChangeUserPasswordDTO,
         change_password_token: str
     ) -> None:
         try:

@@ -11,9 +11,9 @@ from app.config import (EMAIL_DELETE_TEAM_BODY, EMAIL_DELETE_TEAM_SUBJECT,
 from app.db.exc import TeamsAlreadyExistsError, TeamsNotExistsError
 from app.dependencies import DecodeTokenError
 from app.errors import litestar_raise, litestar_response_spec
-from app.handlers.abc.controller import BaseController
-from app.handlers.team.dto import (RequestCreateTeamDTO, RequestUpdateTeamDTO,
-                                   ResponseTeamDTO)
+from app.handlers.controller import BaseController
+from app.handlers.dto import (CreateTeamDTO, UpdateTeamDTO,
+                              TeamDTO)
 from app.mailers.base import NonExistentEmail
 from app.tokens.base import (DeleteTeamTokenPayload, create_delete_team_token,
                              verify_delete_team_token)
@@ -30,17 +30,16 @@ class TeamController(BaseController[TeamConfig]):
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
     }, tags=[tags.team_handler])
-    async def get_team_by_id(self, db: DataBase, team_id: TeamId) -> ResponseTeamDTO:
+    async def get_team_by_id(self, db: DataBase, team_id: TeamId) -> TeamDTO:
         try:
             team = await db.get_team(team_id)
-            return ResponseTeamDTO(
+            return TeamDTO(
                 id=team.id,
                 name=team.name,
                 addon=team.addon,
                 is_vip=team.is_vip,
                 vip_end=team.vip_end,
-                owner_id=team.owner_id,
-                password=team.password
+                owner_id=team.owner_id
             )
         except TeamsNotExistsError:
             raise litestar_raise(error.TeamNotExists)
@@ -50,17 +49,16 @@ class TeamController(BaseController[TeamConfig]):
             Example('TeamNotExists', value=error.TeamNotExists())
         ])
     }, tags=[tags.team_handler])
-    async def get_team_by_name(self, db: DataBase, name: str) -> ResponseTeamDTO:
+    async def get_team_by_name(self, db: DataBase, name: str) -> TeamDTO:
         try:
             team = await db.get_team_by_name(name)
-            return ResponseTeamDTO(
+            return TeamDTO(
                 id=team.id,
                 name=team.name,
                 addon=team.addon,
                 is_vip=team.is_vip,
                 vip_end=team.vip_end,
-                owner_id=team.owner_id,
-                password=team.password
+                owner_id=team.owner_id
             )
         except TeamsNotExistsError:
             raise litestar_raise(error.TeamNotExists)
@@ -78,8 +76,8 @@ class TeamController(BaseController[TeamConfig]):
         ])
     }, tags=[tags.team_handler])
     async def create_team(
-        self, auth_client: AccessTokenPayload, db: DataBase, data: RequestCreateTeamDTO
-    ) -> ResponseTeamDTO:
+        self, auth_client: AccessTokenPayload, db: DataBase, data: CreateTeamDTO
+    ) -> TeamDTO:
         try:
             team = await db.create_team(
                 name=data.name,
@@ -87,14 +85,13 @@ class TeamController(BaseController[TeamConfig]):
                 owner_id=auth_client.sub,
                 password=data.password,
             )
-            return ResponseTeamDTO(
+            return TeamDTO(
                 id=team.id,
                 name=team.name,
                 addon=team.addon,
                 is_vip=team.is_vip,
                 vip_end=team.vip_end,
-                owner_id=team.owner_id,
-                password=team.password
+                owner_id=team.owner_id
             )
         except TeamsAlreadyExistsError:
             raise litestar_raise(error.TeamNameNotUnique)
@@ -205,8 +202,8 @@ class TeamController(BaseController[TeamConfig]):
     }, tags=[tags.team_handler])
     async def update_team(
         self, db: DataBase, auth_client: AccessTokenPayload, team_id: str,
-        data: RequestUpdateTeamDTO
-    ) -> ResponseTeamDTO:
+        data: UpdateTeamDTO
+    ) -> TeamDTO:
         try:
             owner = await db.get_team_owner(team_id)
         except TeamsNotExistsError:
@@ -221,12 +218,11 @@ class TeamController(BaseController[TeamConfig]):
             addon=data.addon,
             password=data.password
         )
-        return ResponseTeamDTO(
+        return TeamDTO(
             id=team.id,
             name=team.name,
             addon=team.addon,
             is_vip=team.is_vip,
             vip_end=team.vip_end,
-            owner_id=team.owner_id,
-            password=team.password,
+            owner_id=team.owner_id
         )

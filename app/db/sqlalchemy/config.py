@@ -7,6 +7,4 @@ from app.db.abc.configs import BaseDBConfig
 
 class SQLAlchemyDBConfig(BaseDBConfig):
     engine_kwargs: Mapping[str, Any] = Field(default_factory=dict)
-    session_maker_kwargs: Mapping[str, Any] = Field(
-        default_factory=lambda: {'expire_on_commit': False}
-    )
+    session_maker_kwargs: Mapping[str, Any] = Field(default_factory=dict)

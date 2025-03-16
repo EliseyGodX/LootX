@@ -12,8 +12,8 @@ from app.config import (EMAIL_REGISTRATION_BODY, EMAIL_REGISTRATION_SUBJECT,
 from app.db.exc import (ActivateUserError, InvalidCredentialsError,
                         UniqueEmailError, UniqueUsernameError)
 from app.errors import litestar_raise, litestar_response_spec
-from app.handlers.abc.controller import BaseController
-from app.handlers.auth.dto import RequestAuthDTO, RequestRegistrationDTO
+from app.handlers.controller import BaseController
+from app.handlers.dto import AuthDTO, RegistrationDTO
 from app.mailers.base import NonExistentEmail
 from app.task_managers.base import TaskManagerError
 from app.tokens.base import (DecodeTokenError, create_access_token,
@@ -38,7 +38,7 @@ class AuthController(BaseController[AuthConfig]):
     async def registration(
         self, db: DataBase, mailer: Mailer, lang: Language, token_type: type[Token],
         token_config: TokenConfigType, task_manager: TaskManager,
-        data: RequestRegistrationDTO
+        data: RegistrationDTO
     ) -> None:
         try:
             await db.is_user_username_email_unique(
@@ -129,8 +129,8 @@ class AuthController(BaseController[AuthConfig]):
             content=None,
             headers={
                 "Set-Cookie":
-                    f"refresh_token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
-                "Authorization": f"Bearer {access_token.encode}"
+                    f"refresh-token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
+                "Authorization": f"Bearer {access_token.encode()}"
             }
         )
 
@@ -141,7 +141,7 @@ class AuthController(BaseController[AuthConfig]):
     }, tags=[tags.auth_handler])
     async def authentication(
         self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
-        data: RequestAuthDTO
+        data: AuthDTO
     ) -> Response[None]:
         try:
             user_id = await db.verify_username_password(
@@ -169,7 +169,7 @@ class AuthController(BaseController[AuthConfig]):
             content=None,
             headers={
                 "Set-Cookie":
-                    f"refresh_token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
-                "Authorization": f"Bearer {access_token.encode}"
+                    f"refresh-token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
+                "Authorization": f"Bearer {access_token.encode()}"
             }
         )

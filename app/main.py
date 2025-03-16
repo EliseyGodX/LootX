@@ -9,21 +9,22 @@ from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
-from litestar.openapi.plugins import SwaggerRenderPlugin
 
-from app.config import (SERVICE_NAME, VERSION, DataBase, DataBaseConfig,
-                        Mailer, MailerConfig, TaskManager, TaskManagerConfig,
-                        Token, TokenConfig, WoWAPI, WoWAPIConfig,
-                        allow_origins)
+from app.caches.base import BaseAsyncTTLCache
+from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, DataBase,
+                        DataBaseConfig, Mailer, MailerConfig, TaskManager,
+                        TaskManagerConfig, Token, TokenConfig, WoWAPI,
+                        WoWAPIConfig, allow_origins, open_api_render_plugins)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.db.wow_api.base import BaseAsyncWoWAPI
 from app.dependencies import auth_client, get_language
-from app.handlers.auth.controller import AuthController
-from app.handlers.item.controller import ItemController
-from app.handlers.raider.controller import RaiderController
-from app.handlers.team.controller import TeamController
-from app.handlers.user.controller import UserController
+from app.handlers.auth import AuthController
+from app.handlers.item import ItemController
+from app.handlers.queue import QueueController
+from app.handlers.raider import RaiderController
+from app.handlers.team import TeamController
+from app.handlers.user import UserController
 from app.mailers.base import BaseAsyncMailer, MailerError
 from app.task_managers.base import BaseAsyncTaskManager, Tasks
 from app.tokens.base import BaseToken
@@ -33,8 +34,9 @@ from app.types import UserId
 
 
 @asynccontextmanager
-async def lifespan(app: Litestar) -> AsyncIterator[None]:
+async def lifespan(app: Litestar) -> AsyncIterator[None]:  # noqa: WPS213
     app.state.db = DataBase(DataBaseConfig)
+    app.state.cache = Cache(CacheConfig)
     app.state.mailer = Mailer(MailerConfig)
     app.state.wow_api = WoWAPI(WoWAPIConfig)
     app.state.task_manager = TaskManager(
@@ -46,6 +48,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.token_type = Token
     app.state.token_config = TokenConfig
     await app.state.db.connect()
+    await app.state.cache.connect()
     await app.state.mailer.connect()
     await app.state.wow_api.connect()
     await app.state.task_manager.connect()
@@ -53,6 +56,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     yield
 
     await app.state.db.close()
+    await app.state.cache.close()
     await app.state.mailer.close()
     await app.state.wow_api.close()
     await app.state.task_manager.close()
@@ -65,6 +69,10 @@ async def del_inactive_user_task(user_id: UserId) -> None:
 
 def provide_db() -> BaseAsyncDB:
     return app.state.db
+
+
+def provide_cache() -> BaseAsyncTTLCache:
+    return app.state.cache
 
 
 def provide_mailer() -> BaseAsyncMailer:
@@ -105,14 +113,15 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 app = Litestar(
     route_handlers=[AuthController, TeamController, UserController, RaiderController,
-                    ItemController],
+                    ItemController, QueueController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
         version=VERSION,
-        render_plugins=[SwaggerRenderPlugin()]
+        render_plugins=open_api_render_plugins
     ),
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
+        'cache': Provide(provide_cache, sync_to_thread=False),
         'mailer': Provide(provide_mailer, sync_to_thread=False),
         'task_manager': Provide(provide_task_manager, sync_to_thread=False),
         'wow_api': Provide(provide_wow_api, sync_to_thread=False),

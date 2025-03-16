@@ -6,10 +6,11 @@ from litestar.openapi.spec import Example
 from app import errors as error
 from app import openapi_tags as tags
 from app.config import DataBase, RaiderConfig
-from app.db.exc import RaiderNotFoundError, RaiderNotUnique, TeamsNotExistsError
+from app.db.exc import (RaiderNotFoundError, RaiderNotUnique,
+                        TeamsNotExistsError)
 from app.errors import litestar_raise, litestar_response_spec
-from app.handlers.abc.controller import BaseController
-from app.handlers.raider.dto import RequestCreateRaiderDTO, ResponseRaiderDTO
+from app.handlers.controller import BaseController
+from app.handlers.dto import CreateRaiderDTO, RaiderDTO
 from app.tokens.payloads import AccessTokenPayload
 from app.types import RaiderId
 
@@ -23,10 +24,10 @@ class RaiderController(BaseController[RaiderConfig]):
             Example('RaiderNotExists', value=error.RaiderNotExists())
         ])
     }, tags=[tags.raider_handler])
-    async def get_raider(self, db: DataBase, raider_id: RaiderId) -> ResponseRaiderDTO:
+    async def get_raider(self, db: DataBase, raider_id: RaiderId) -> RaiderDTO:
         try:
             raider = await db.get_raider(raider_id)
-            return ResponseRaiderDTO(
+            return RaiderDTO(
                 id=raider.id,
                 name=raider.name,
                 team_id=raider.team_id,
@@ -56,8 +57,8 @@ class RaiderController(BaseController[RaiderConfig]):
     }, tags=[tags.raider_handler])
     async def create_raider(
         self, auth_client: AccessTokenPayload, db: DataBase,
-        data: RequestCreateRaiderDTO
-    ) -> ResponseRaiderDTO:
+        data: CreateRaiderDTO
+    ) -> RaiderDTO:
         try:
             owner = await db.get_team_owner(data.team_id)
         except TeamsNotExistsError:
@@ -76,7 +77,7 @@ class RaiderController(BaseController[RaiderConfig]):
         except RaiderNotUnique:
             raise litestar_raise(error.RaiderNotUnique)
 
-        return ResponseRaiderDTO(
+        return RaiderDTO(
             id=raider.id,
             name=raider.name,
             team_id=raider.team_id,

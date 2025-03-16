@@ -5,24 +5,24 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import AsyncGenerator, Literal, NoReturn, Sequence
 
-from sqlalchemy import case, delete, select
+from sqlalchemy import case, delete, select, exists
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.db.abc.base import BaseAsyncDB, get_id
-from app.db.abc.models import (RaiderProtocol, TeamProtocol, UserProtocol,
-                               WoWItemProtocol)
+from app.db.abc.models import (QueueProtocol, RaiderProtocol, TeamProtocol,
+                               UserProtocol, WoWItemProtocol)
 from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
 from app.db.exc import (ActivateUserError, DatabaseError,
-                        InvalidCredentialsError, ItemNotFoundError,
+                        InvalidCredentialsError, WoWItemNotFoundError,
                         RaiderNotFoundError, RaiderNotUnique,
                         TeamsNotExistsError, UniqueEmailError,
                         UniqueTeamNameError, UniqueUsernameError,
                         UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Raider, Team, User, WoWItem
+from app.db.sqlalchemy.models import Base, Queue, Raider, Team, User, WoWItem
 from app.db.wow_api.base import BaseAsyncWoWAPI, WoWAPIItem
 from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
@@ -290,7 +290,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             if user and user.check_password(password):
                 return user.id
             else:
-                raise InvalidCredentialsError("Invalid username or password")
+                raise InvalidCredentialsError('Invalid username or password')
 
     async def get_raider(self, id: RaiderId) -> RaiderProtocol:
         async with self.get_read_session() as session:
@@ -346,7 +346,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             if wow_item:
                 return wow_item  # type: ignore
             else:
-                raise ItemNotFoundError(f"Item with id {id} does not exist")
+                raise WoWItemNotFoundError(f"Item with id {id} does not exist")
 
     async def get_wow_item_by_wow_id(
         self, wow_id: int, addon: EnumAddons, lang: EnumLanguages,
@@ -377,6 +377,72 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 session.add(wow_item)
 
         return wow_item  # type: ignore
+
+    async def get_queue(
+        self, team_id: TeamId, wow_item_id: int
+    ) -> Sequence[QueueProtocol]:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(Queue)
+                .options(joinedload(Queue.raider))
+                .where(
+                    Queue.team_id == team_id,
+                    Queue.wow_item_id == wow_item_id
+                )
+            )
+            queues = (await session.execute(stmt)).scalars().all()
+            return queues  # type: ignore
+
+    async def create_queue(
+        self, team_id: TeamId, wow_item_id: int, addon: EnumAddons,
+        lang: EnumLanguages, raiders: Sequence[RaiderId],
+        wow_api: BaseAsyncWoWAPI
+    ) -> Sequence[QueueProtocol]:
+        wow_item = await self.get_wow_item_by_wow_id(
+            wow_id=wow_item_id,
+            addon=addon,
+            lang=lang,
+            wow_api=wow_api
+        )
+        if not wow_item:
+            raise WoWItemNotFoundError(f"Item with id {wow_item_id} does not exist")
+
+        await self.del_queue(team_id, wow_item_id)
+        try:
+            async with self.get_write_session() as session:
+                for i, raider_id in enumerate(raiders, start=1):
+                    queue = Queue(
+                        position=i,
+                        team_id=team_id,
+                        raider_id=raider_id,
+                        wow_item_id=wow_item_id
+                    )
+                    session.add(queue)
+        except IntegrityError as e:
+            raise RaiderNotFoundError from e
+
+        return await self.get_queue(team_id, wow_item_id)
+
+    async def del_queue(self, team_id: TeamId, wow_item_id: int) -> None:
+        async with self.get_write_session() as session:
+            await session.execute(
+                delete(Queue).where(
+                    Queue.team_id == team_id,
+                    Queue.wow_item_id == wow_item_id
+                )
+            )
+
+    async def is_queue_exists(self, team_id: TeamId, wow_item_id: int) -> bool:
+        async with self.get_read_session() as session:
+            return bool(await session.scalar(
+                select(
+                    exists()
+                    .where(
+                        Queue.team_id == team_id,
+                        Queue.wow_item_id == wow_item_id
+                    )
+                )
+            ))
 
     async def close(self) -> None:
         await self.engine.dispose()

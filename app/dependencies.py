@@ -77,7 +77,7 @@ def auth_client(
         error_model=error.UpdateTokens,
         headers={
             "Set-Cookie":
-                f"refresh_token={new_refresh_token.encode()}; HttpOnly; Path=/; Secure",
-            "Authorization": f"Bearer {new_access_token.encode}"
+                f"refresh-token={new_refresh_token.encode()}; HttpOnly; Path=/; Secure",
+            "Authorization": f"Bearer {new_access_token.encode()}"
         }
     )

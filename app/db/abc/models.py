@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Protocol
 
 from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
-from app.types import WoWItemId, LogId, QueueId, RaiderId, TeamId, UserId
+from app.types import LogId, QueueId, RaiderId, TeamId, UserId, WoWItemId
 
 
 class UserProtocol(Protocol):
@@ -50,7 +50,6 @@ class WoWItemProtocol(Protocol):
     icon_url: str
     origin_link: str
     logs: list['LogProtocol']
-    queues: list['QueueProtocol']
 
 
 class QueueProtocol(Protocol):
@@ -58,10 +57,9 @@ class QueueProtocol(Protocol):
     position: int
     team_id: TeamId
     raider_id: RaiderId
-    item_id: WoWItemId
+    wow_item_id: int
     team: 'TeamProtocol'
     raider: 'RaiderProtocol'
-    item: 'WoWItemProtocol'
 
 
 class LogProtocol(Protocol):

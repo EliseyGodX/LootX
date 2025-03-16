@@ -13,6 +13,6 @@ class BaseMailerConfig(BaseModel):
 
 class SMTPConfig(BaseMailerConfig):
     smtp_server: str
+    smtp_port: int
     smtp_user: str
     smtp_password: str
-    smtp_port: int = 587

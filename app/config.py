@@ -11,7 +11,10 @@ from typing import Mapping
 
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
+from litestar.openapi.plugins import SwaggerRenderPlugin
 
+from app.caches.base import RedisAsyncCache
+from app.caches.configs import RedisConfig
 from app.db.sqlalchemy.base import AsyncSQLAlchemyDB
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
 from app.db.wow_api.base import WoWHeadAPI
@@ -42,10 +45,9 @@ VERSION = '0.0.0'
 APP_PATH = Path(__file__).parent
 ROOT_PATH = APP_PATH.parent
 
-allow_origins = ["http://26.160.241.12:5173", "http://localhost:5173"]
-
 load_dotenv(ROOT_PATH / '.env')
 
+allow_origins = os.getenv('ALLOW_ORIGINS').split(",")  # type: ignore
 
 file_handler = logging.FileHandler(ROOT_PATH / f"{SERVICE_NAME}.log")
 file_handler.setLevel(logging.DEBUG)
@@ -59,7 +61,9 @@ logger = logging.getLogger(SERVICE_NAME)
 logger.addHandler(file_handler)
 
 
-DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore[reportArgumentType]
+DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore
+
+open_api_render_plugins = [SwaggerRenderPlugin()]
 
 
 EMAIL_REGISTRATION_SUBJECT: Mapping[Language, str] = MappingProxyType({
@@ -69,41 +73,49 @@ EMAIL_REGISTRATION_BODY: Mapping[Language, str] = MappingProxyType({
     Language.en: '{}'
 })
 
-EMAIL_CHANGE_PASSWORD_BODY: Mapping[Language, str] = MappingProxyType({
-    Language.en: '{}'
-})
 EMAIL_CHANGE_PASSWORD_SUBJECT: Mapping[Language, str] = MappingProxyType({
     Language.en: 'change password'
 })
-
-EMAIL_DELETE_TEAM_BODY: Mapping[Language, str] = MappingProxyType({
+EMAIL_CHANGE_PASSWORD_BODY: Mapping[Language, str] = MappingProxyType({
     Language.en: '{}'
 })
+
 EMAIL_DELETE_TEAM_SUBJECT: Mapping[Language, str] = MappingProxyType({
     Language.en: 'delete team'
+})
+EMAIL_DELETE_TEAM_BODY: Mapping[Language, str] = MappingProxyType({
+    Language.en: '{}'
 })
 
 DataBase = AsyncSQLAlchemyDB
 DataBaseConfig = SQLAlchemyDBConfig(
-    db_url=DATABASE_URL
+    db_url=DATABASE_URL,
+    session_maker_kwargs={'expire_on_commit': False}
+)
+
+Cache = RedisAsyncCache
+CacheConfig = RedisConfig(
+    logger=logger,
+    redis_host=os.getenv('REDIS_HOST'),  # type: ignore
+    redis_port=int(os.getenv('REDIS_PORT'))  # type: ignore
 )
 
 Mailer = AsyncSMTPMailer
 MailerConfig = SMTPConfig(
     logger=logger,
-    self_email=os.getenv('SELF_EMAIL'),  # type: ignore[reportArgumentType]
-    smtp_server=os.getenv('EMAIL_SERVER'),  # type: ignore[reportArgumentType]
-    smtp_user=os.getenv('EMAIL_USER'),  # type: ignore[reportArgumentType]
-    smtp_password=os.getenv('EMAIL_PASSWORD'),  # type: ignore[reportArgumentType]
-    smtp_port=int(os.getenv('SMTP_PORT'))  # type: ignore[reportArgumentType]
+    self_email=os.getenv('SELF_EMAIL'),  # type: ignore
+    smtp_server=os.getenv('EMAIL_SERVER'),  # type: ignore
+    smtp_user=os.getenv('EMAIL_USER'),  # type: ignore
+    smtp_password=os.getenv('EMAIL_PASSWORD'),  # type: ignore
+    smtp_port=int(os.getenv('SMTP_PORT'))  # type: ignore
 )
 
 Token = JWToken
 TokenConfigType = JWTokenConfig
 TokenConfig = TokenConfigType(
-    alg=os.getenv('JWT_ALGORITHM'),  # type: ignore[reportArgumentType]
+    alg=os.getenv('JWT_ALGORITHM'),  # type: ignore
     typ='JWT',
-    key=os.getenv('JWT_KEY'),  # type: ignore[reportArgumentType]
+    key=os.getenv('JWT_KEY'),  # type: ignore
 )
 
 TaskManager = KapustaTaskManager
@@ -167,4 +179,9 @@ class RaiderConfig(BaseConfig):
 
 @dataclass(frozen=True)
 class ItemConfig(BaseConfig):
+    ...
+
+
+@dataclass(frozen=True)
+class QueueConfig(BaseConfig):
     ...
