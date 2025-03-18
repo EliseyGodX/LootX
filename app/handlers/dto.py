@@ -45,7 +45,6 @@ class RaiderDTO(BaseDTO):
 
 
 class QueueDTO(BaseDTO):
-    id: str
     position: int
     raider: RaiderDTO
 
@@ -53,7 +52,7 @@ class QueueDTO(BaseDTO):
 class QueueListDTO(BaseDTO):
     team_id: TeamId
     wow_item_id: int
-    queues: list[QueueDTO]
+    queue: list[QueueDTO]
 
 
 class CreateQueueDTO(BaseDTO):
@@ -105,3 +104,16 @@ class UserDTO(BaseDTO):
     username: Username
     email: str
     is_active: bool
+
+
+class LogDTO(BaseDTO):
+    created_at: datetime
+    queue: list[QueueDTO]
+
+
+class LogListDTO(BaseDTO):
+    team_id: TeamId
+    wow_item_id: int | None
+    limit: int | None
+    offset: int | None
+    logs: list[LogDTO]

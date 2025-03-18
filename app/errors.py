@@ -125,21 +125,12 @@ class AuthorizationHeaderMissing(BaseError):
     }
 
 
-class RefreshTokenCookieMissing(BaseError):
+class RefreshTokenMissing(BaseError):
     status_code: int = 401
     detail: str = HTTPStatus(401).phrase
     extra: dict = {
         'error_code': 14,
         'message': 'Refresh token missing in cookie'
-    }
-
-
-class UpdateTokens(BaseError):
-    status_code: int = 401
-    detail: str = HTTPStatus(401).phrase
-    extra: dict = {
-        'error_code': 15,
-        'message': 'New access and refresh tokens'
     }
 
 
@@ -213,6 +204,24 @@ class QueueNotExists(BaseError):
     extra: dict = {
         'error_code': 22,
         'message': 'Queue not exists'
+    }
+
+
+class AccessTokenExpired(BaseError):
+    status_code: int = 401
+    detail: str = HTTPStatus(401).phrase
+    extra: dict = {
+        'error_code': 23,
+        'message': 'Access token expired'
+    }
+
+
+class RefreshTokenExpired(BaseError):
+    status_code: int = 401
+    detail: str = HTTPStatus(401).phrase
+    extra: dict = {
+        'error_code': 24,
+        'message': 'Refresh token expired'
     }
 
 

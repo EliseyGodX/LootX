@@ -21,6 +21,7 @@ from app.db.wow_api.base import BaseAsyncWoWAPI
 from app.dependencies import auth_client, get_language
 from app.handlers.auth import AuthController
 from app.handlers.item import ItemController
+from app.handlers.log import LogController
 from app.handlers.queue import QueueController
 from app.handlers.raider import RaiderController
 from app.handlers.team import TeamController
@@ -113,7 +114,7 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 app = Litestar(
     route_handlers=[AuthController, TeamController, UserController, RaiderController,
-                    ItemController, QueueController],
+                    ItemController, QueueController, LogController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
         version=VERSION,

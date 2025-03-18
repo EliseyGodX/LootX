@@ -8,12 +8,11 @@ from app import openapi_tags as tags
 from app.config import (EMAIL_DELETE_TEAM_BODY, EMAIL_DELETE_TEAM_SUBJECT,
                         DataBase, Language, Mailer, TeamConfig, Token,
                         TokenConfigType)
-from app.db.exc import TeamsAlreadyExistsError, TeamsNotExistsError
+from app.db.exc import TeamsNotExistsError, UniqueTeamNameError
 from app.dependencies import DecodeTokenError
 from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.controller import BaseController
-from app.handlers.dto import (CreateTeamDTO, UpdateTeamDTO,
-                              TeamDTO)
+from app.handlers.dto import CreateTeamDTO, TeamDTO, UpdateTeamDTO
 from app.mailers.base import NonExistentEmail
 from app.tokens.base import (DeleteTeamTokenPayload, create_delete_team_token,
                              verify_delete_team_token)
@@ -66,10 +65,8 @@ class TeamController(BaseController[TeamConfig]):
     @post('/', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         409: litestar_response_spec(examples=[
             Example('TeamNameNotUnique', value=error.TeamNameNotUnique())
@@ -85,24 +82,23 @@ class TeamController(BaseController[TeamConfig]):
                 owner_id=auth_client.sub,
                 password=data.password,
             )
-            return TeamDTO(
-                id=team.id,
-                name=team.name,
-                addon=team.addon,
-                is_vip=team.is_vip,
-                vip_end=team.vip_end,
-                owner_id=team.owner_id
-            )
-        except TeamsAlreadyExistsError:
+        except UniqueTeamNameError:
             raise litestar_raise(error.TeamNameNotUnique)
+
+        return TeamDTO(
+            id=team.id,
+            name=team.name,
+            addon=team.addon,
+            is_vip=team.is_vip,
+            vip_end=team.vip_end,
+            owner_id=team.owner_id
+        )
 
     @post('delete-request/{team_name:str}', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
@@ -146,10 +142,8 @@ class TeamController(BaseController[TeamConfig]):
     @delete('delete/{delete_team_token:str}', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
@@ -188,10 +182,8 @@ class TeamController(BaseController[TeamConfig]):
     @patch('/{team_id:str}', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())

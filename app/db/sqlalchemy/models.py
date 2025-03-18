@@ -116,7 +116,6 @@ class WoWItem(Base):
     html_tooltip: Mapped[str] = mapped_column(String, nullable=False)
     icon_url: Mapped[str] = mapped_column(String, nullable=False)
     origin_link: Mapped[str] = mapped_column(String, nullable=False)
-    logs: Mapped[list['Log']] = relationship(back_populates='wow_item')
 
 
 class Queue(Base):
@@ -139,10 +138,10 @@ class Log(Base):
     id: Mapped[LogId] = mapped_column(String, primary_key=True, default=get_id)
     team_id: Mapped[TeamId] = mapped_column(ForeignKey('teams.id'), nullable=False)
     user_id: Mapped[UserId] = mapped_column(ForeignKey('users.id'), nullable=False)
-    wow_item_id: Mapped[WoWItemId] = mapped_column(
-        ForeignKey('wow_items.id'), nullable=False
+    wow_item_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now
     )
-    data: Mapped[str] = mapped_column(String)
+    queue: Mapped[str] = mapped_column(String)
     team: Mapped['Team'] = relationship(back_populates='logs')
     user: Mapped['User'] = relationship(back_populates='logs')
-    wow_item: Mapped['WoWItem'] = relationship(back_populates='logs')

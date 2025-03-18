@@ -16,6 +16,9 @@ class EnumClasses(Enum):
     death_knight = 'death-knight'
     evoker = 'evoker'
 
+    def __repr__(self) -> str:
+        return f'{self.value!r}'
+
 
 class EnumAddons(Enum):
     retail = 'retail'

@@ -40,10 +40,8 @@ class RaiderController(BaseController[RaiderConfig]):
     @post('/', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
@@ -88,10 +86,8 @@ class RaiderController(BaseController[RaiderConfig]):
     @delete('/{raider_id:str}', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         422: litestar_response_spec(examples=[
             Example('TeamNotExists', value=error.TeamNotExists()),

@@ -65,10 +65,8 @@ class UserController(BaseController[UserConfig]):
     @post('/change-password-request', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         422: litestar_response_spec(examples=[
             Example('UserNotExists', value=error.UserNotExists()),
@@ -105,10 +103,8 @@ class UserController(BaseController[UserConfig]):
     @patch('change-password/{change_password_token:str}', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('TokensSubjectNotEqual', value=error.TokensSubjectNotEqual())  # noqa: E501

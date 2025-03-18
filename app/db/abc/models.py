@@ -49,7 +49,6 @@ class WoWItemProtocol(Protocol):
     html_tooltip: str
     icon_url: str
     origin_link: str
-    logs: list['LogProtocol']
 
 
 class QueueProtocol(Protocol):
@@ -66,8 +65,8 @@ class LogProtocol(Protocol):
     id: LogId
     team_id: TeamId
     user_id: UserId
-    item_id: WoWItemId
-    data: str
+    wow_item_id: int
+    created_at: datetime
+    queue: str
     team: 'TeamProtocol'
     user: 'UserProtocol'
-    item: 'WoWItemProtocol'

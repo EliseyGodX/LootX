@@ -1,5 +1,6 @@
 # flake8-in-file-ignores: noqa: B904, WPS11, WPS400
 
+from litestar.connection import Request
 from litestar.handlers import get, post
 from litestar.openapi.spec import Example
 from litestar.response import Response
@@ -16,7 +17,8 @@ from app.handlers.controller import BaseController
 from app.handlers.dto import AuthDTO, RegistrationDTO
 from app.mailers.base import NonExistentEmail
 from app.task_managers.base import TaskManagerError
-from app.tokens.base import (DecodeTokenError, create_access_token,
+from app.tokens.base import (DecodeTokenError, RefreshTokenPayload,
+                             TokenExpiredError, create_access_token,
                              create_refresh_token, create_registration_token,
                              verify_registration_token)
 from app.tokens.payloads import RegistrationTokenPayload
@@ -168,8 +170,57 @@ class AuthController(BaseController[AuthConfig]):
         return Response(
             content=None,
             headers={
-                "Set-Cookie":
-                    f"refresh-token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
-                "Authorization": f"Bearer {access_token.encode()}"
+                "X-New-Access-Token": access_token.encode(),
+                "X-New-Refresh-Token": refresh_token.encode()
+            }
+        )
+
+    @get('/refresh', responses={
+        401: litestar_response_spec(examples=[
+            Example('RefreshTokenExpired', value=error.RefreshTokenExpired()),
+            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
+            Example('RefreshTokenMissing', value=error.RefreshTokenMissing())
+        ])
+    }, tags=[tags.auth_handler])
+    async def refresh(
+        self, request: Request, token_type: type[Token], token_config: TokenConfigType
+    ) -> Response[None]:
+        try:
+            refresh_token = token_type.decode(
+                token=request.headers['Refresh-Token'],
+                config=token_config,
+                payload_type=RefreshTokenPayload
+            )
+            refresh_token_payload: RefreshTokenPayload = (
+                refresh_token.payload
+            )  # type: ignore
+
+        except TokenExpiredError:
+            raise litestar_raise(error.RefreshTokenExpired)
+
+        except DecodeTokenError:
+            raise litestar_raise(error.RefreshTokenInvalid)
+
+        except KeyError:
+            raise litestar_raise(error.RefreshTokenMissing)
+
+        new_access_token = create_access_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=refresh_token_payload.sub
+        )
+
+        new_refresh_token = create_refresh_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=refresh_token_payload.sub
+        )
+        return Response(
+            content=None,
+            headers={
+                "X-New-Access-Token": new_access_token.encode(),
+                "X-New-Refresh-Token": new_refresh_token.encode()
             }
         )

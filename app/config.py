@@ -185,3 +185,8 @@ class ItemConfig(BaseConfig):
 @dataclass(frozen=True)
 class QueueConfig(BaseConfig):
     ...
+
+
+@dataclass(frozen=True)
+class LogConfig(BaseConfig):
+    ...

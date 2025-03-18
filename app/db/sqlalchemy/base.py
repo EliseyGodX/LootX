@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from app.db.abc.base import BaseAsyncDB, get_id
 from app.db.abc.models import (QueueProtocol, RaiderProtocol, TeamProtocol,
-                               UserProtocol, WoWItemProtocol)
+                               UserProtocol, WoWItemProtocol, LogProtocol)
 from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
 from app.db.exc import (ActivateUserError, DatabaseError,
                         InvalidCredentialsError, WoWItemNotFoundError,
@@ -22,7 +22,7 @@ from app.db.exc import (ActivateUserError, DatabaseError,
                         UniqueTeamNameError, UniqueUsernameError,
                         UserNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Queue, Raider, Team, User, WoWItem
+from app.db.sqlalchemy.models import Base, Queue, Raider, Team, User, WoWItem, Log
 from app.db.wow_api.base import BaseAsyncWoWAPI, WoWAPIItem
 from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
@@ -82,10 +82,14 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                     password=password
                 )
                 session.add(new_user)
-                return new_user  # type: ignore
 
-        except IntegrityError as e:
-            self._raise_user_unique_error(e)
+        except DatabaseError as e:
+            if isinstance(e.__cause__, IntegrityError):
+                self._raise_user_unique_error(e.__cause__)
+            else:
+                raise e
+
+        return new_user  # type: ignore
 
     async def get_user(self, id: UserId) -> UserProtocol:
         async with self.get_read_session() as session:
@@ -182,12 +186,16 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                     password=password
                 )
                 session.add(team)
-                return team  # type: ignore
 
-            except IntegrityError as e:
-                raise UniqueTeamNameError(
-                    'Team with that name already exists'
-                ) from e
+            except DatabaseError as e:
+                if isinstance(e.__cause__, IntegrityError):
+                    raise UniqueTeamNameError(
+                        'Team with that name already exists'
+                    ) from e
+                else:
+                    raise e
+
+        return team  # type: ignore
 
     async def del_team(self, id: TeamId) -> None:
         async with self.get_write_session() as session:
@@ -321,18 +329,15 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                     f'in the team ({existing_raider})'
                 )
 
-            try:
-                raider = Raider(
-                    id=get_id() if id is Sentinel else id,
-                    name=name,
-                    team_id=team_id,
-                    class_name=class_name,
-                    is_active=is_active
-                )
-                session.add(raider)
-                return raider  # type: ignore
-            except IntegrityError as e:
-                raise DatabaseError('Error creating raider') from e
+            raider = Raider(
+                id=get_id() if id is Sentinel else id,
+                name=name,
+                team_id=team_id,
+                class_name=class_name,
+                is_active=is_active
+            )
+            session.add(raider)
+            return raider  # type: ignore
 
     async def set_raider_inactive(self, id: RaiderId) -> None:
         raider = await self.get_raider(id)
@@ -418,8 +423,11 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                         wow_item_id=wow_item_id
                     )
                     session.add(queue)
-        except IntegrityError as e:
-            raise RaiderNotFoundError from e
+        except DatabaseError as e:
+            if isinstance(e.__cause__, IntegrityError):
+                raise RaiderNotFoundError('Raiders not exists') from e
+            else:
+                raise e
 
         return await self.get_queue(team_id, wow_item_id)
 
@@ -443,6 +451,38 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                     )
                 )
             ))
+
+    async def create_log(
+        self, team_id: TeamId, user_id: UserId, wow_item_id: int, queue: str
+    ) -> LogProtocol:
+        async with self.get_write_session() as session:
+            log = Log(
+                team_id=team_id,
+                user_id=user_id,
+                wow_item_id=wow_item_id,
+                queue=queue
+            )
+            session.add(log)
+        return log  # type: ignore
+
+    async def get_logs(
+        self, team_id: TeamId, wow_item_id: int | None = None,
+        limit: int | None = None, offset: int | None = None
+    ) -> Sequence[LogProtocol]:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(Log)
+                .where(
+                    Log.team_id == team_id,
+                )
+                .order_by(Log.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            if wow_item_id:
+                stmt.where(Log.wow_item_id == wow_item_id)
+            logs = (await session.execute(stmt)).scalars().all()
+        return logs  # type: ignore
 
     async def close(self) -> None:
         await self.engine.dispose()

@@ -1,12 +1,13 @@
 # flake8-in-file-ignores: noqa: B904, WPS110, WPS400
 
-from litestar.handlers import get, post, delete
+from litestar.handlers import delete, get, post
 from litestar.openapi.spec import Example
 
 from app import errors as error
 from app import openapi_tags as tags
 from app.config import DataBase, Language, QueueConfig, WoWAPI
-from app.db.exc import RaiderNotFoundError, TeamsNotExistsError, WoWItemNotFoundError
+from app.db.exc import (RaiderNotFoundError, TeamsNotExistsError,
+                        WoWItemNotFoundError)
 from app.errors import litestar_raise, litestar_response_spec
 from app.handlers.controller import BaseController
 from app.handlers.dto import CreateQueueDTO, QueueDTO, QueueListDTO, RaiderDTO
@@ -25,9 +26,8 @@ class QueueController(BaseController[QueueConfig]):
         return QueueListDTO(
             team_id=team_id,
             wow_item_id=wow_item_id,
-            queues=[
+            queue=[
                 QueueDTO(
-                    id=queue.id,
                     position=queue.position,
                     raider=RaiderDTO(
                         id=queue.raider.id,
@@ -44,10 +44,8 @@ class QueueController(BaseController[QueueConfig]):
     @post('/', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
@@ -58,7 +56,7 @@ class QueueController(BaseController[QueueConfig]):
             Example('ItemNotExists', value=error.ItemNotExists())
         ])
     }, tags=[tags.queue_handler])
-    async def create_queue(
+    async def update_queue(
         self, auth_client: AccessTokenPayload, db: DataBase, lang: Language,
         wow_api: WoWAPI, data: CreateQueueDTO
     ) -> QueueListDTO:
@@ -71,12 +69,11 @@ class QueueController(BaseController[QueueConfig]):
             raise litestar_raise(error.UserNotTeamOwner)
 
         try:
-            return QueueListDTO(
+            queue_list = QueueListDTO(
                 team_id=data.team_id,
                 wow_item_id=data.wow_item_id,
-                queues=[
+                queue=[
                     QueueDTO(
-                        id=queue.id,
                         position=queue.position,
                         raider=RaiderDTO(
                             id=queue.raider.id,
@@ -96,6 +93,13 @@ class QueueController(BaseController[QueueConfig]):
                     )
                 ]
             )
+            await db.create_log(
+                team_id=data.team_id,
+                user_id=auth_client.sub,
+                wow_item_id=data.wow_item_id,
+                queue=str([queue.model_dump() for queue in queue_list.queue])
+            )
+            return queue_list
         except RaiderNotFoundError:
             raise litestar_raise(error.RaiderNotExists)
         except WoWItemNotFoundError:
@@ -104,10 +108,8 @@ class QueueController(BaseController[QueueConfig]):
     @delete('/', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing()),  # noqa
-            Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenCookieMissing', value=error.RefreshTokenCookieMissing()),  # noqa
-            Example('UpdateTokens', value=error.UpdateTokens())
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
         ]),
         403: litestar_response_spec(examples=[
             Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
