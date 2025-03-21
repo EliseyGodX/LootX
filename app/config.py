@@ -2,7 +2,7 @@
 
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
@@ -11,6 +11,7 @@ from typing import Mapping
 
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
+from litestar.logging import LoggingConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 
 from app.caches.base import RedisAsyncCache
@@ -47,19 +48,30 @@ ROOT_PATH = APP_PATH.parent
 
 load_dotenv(ROOT_PATH / '.env')
 
-allow_origins = os.getenv('ALLOW_ORIGINS').split(",")  # type: ignore
+allow_origins = os.getenv('ALLOW_ORIGINS').split(',')  # type: ignore
 
-file_handler = logging.FileHandler(ROOT_PATH / f"{SERVICE_NAME}.log")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(
-    logging.Formatter(
-        '%(levelname)s | %(asctime)s | %(module)s | %(funcName)s | %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+logging_config = LoggingConfig(
+    root={
+        'level': 'DEBUG',
+        'handlers': ['file']
+    },
+    handlers={
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': ROOT_PATH / f"{SERVICE_NAME}.log",
+            'mode': 'w',
+            'formatter': 'standard',
+        }
+    },
+    formatters={
+        'standard': {
+            'format': ('%(name)s | %(levelname)s | %(asctime)s'
+                       ' | %(module)s | %(funcName)s | %(message)s'),
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        }
+    },
+    log_exceptions='always',
 )
-logger = logging.getLogger(SERVICE_NAME)
-logger.addHandler(file_handler)
-
 
 DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore
 
@@ -87,22 +99,32 @@ EMAIL_DELETE_TEAM_BODY: Mapping[Language, str] = MappingProxyType({
     Language.en: '{}'
 })
 
+_db_logger = logging.getLogger('sqlalchemy.engine')
+_db_logger.setLevel(logging.INFO)
 DataBase = AsyncSQLAlchemyDB
 DataBaseConfig = SQLAlchemyDBConfig(
+    logger=_db_logger,
     db_url=DATABASE_URL,
     session_maker_kwargs={'expire_on_commit': False}
 )
 
 Cache = RedisAsyncCache
 CacheConfig = RedisConfig(
-    logger=logger,
+    logger=logging.getLogger('redis'),
     redis_host=os.getenv('REDIS_HOST'),  # type: ignore
     redis_port=int(os.getenv('REDIS_PORT'))  # type: ignore
 )
 
+
+@dataclass(frozen=True)
+class CacheKeys:
+    team_name: str = 'tn: {}'
+    full_team: str = 'ft: {}'
+
+
 Mailer = AsyncSMTPMailer
 MailerConfig = SMTPConfig(
-    logger=logger,
+    logger=logging.getLogger('smtp'),
     self_email=os.getenv('SELF_EMAIL'),  # type: ignore
     smtp_server=os.getenv('EMAIL_SERVER'),  # type: ignore
     smtp_user=os.getenv('EMAIL_USER'),  # type: ignore
@@ -113,6 +135,7 @@ MailerConfig = SMTPConfig(
 Token = JWToken
 TokenConfigType = JWTokenConfig
 TokenConfig = TokenConfigType(
+    logger=logging.getLogger('tokens'),
     alg=os.getenv('JWT_ALGORITHM'),  # type: ignore
     typ='JWT',
     key=os.getenv('JWT_KEY'),  # type: ignore
@@ -120,8 +143,8 @@ TokenConfig = TokenConfigType(
 
 TaskManager = KapustaTaskManager
 TaskManagerConfig = KapustaConfig(
+    logger=logging.getLogger('kapusta'),
     crud=AlchemyCRUD(DATABASE_URL),
-    logger=logger,
     max_tick_interval=5 * 60,
     default_overdue_time_delta=None,
     default_max_retry_attempts=3,
@@ -130,7 +153,7 @@ TaskManagerConfig = KapustaConfig(
 
 WoWAPI = WoWHeadAPI
 WoWAPIConfig = WoWHeadAPIConfig(
-    logger=logger,
+    logger=logging.getLogger('wow_head'),
     url='https://www.wowhead.com/{addon}/{lang}/item={id}&xml',
     icon_url='https://wow.zamimg.com/images/wow/icons/large/{icon}.jpg'
 )
@@ -163,6 +186,10 @@ class TeamConfig(BaseConfig):
     password_min_length: int = 5
     password_max_length: int = 24
 
+    restricted_name_list: list[str] = field(default_factory=lambda: [
+        'auth', 'core', 'item', 'log', 'queue', 'raider', 'team', 'user'
+    ])
+
     delete_team_token_exp: timedelta = timedelta(minutes=5)
 
 
@@ -189,4 +216,9 @@ class QueueConfig(BaseConfig):
 
 @dataclass(frozen=True)
 class LogConfig(BaseConfig):
+    ...
+
+
+@dataclass(frozen=True)
+class CoreConfig(BaseConfig):
     ...

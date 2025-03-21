@@ -43,8 +43,9 @@ class JWToken(BaseToken[JWTokenConfig]):
 
     def encode(self) -> str:
         try:
-            return jwt.encode(
-                payload=self.payload.model_dump(),
+            payload = self.payload.model_dump()
+            token = jwt.encode(
+                payload=payload,
                 key=self.config.key,
                 algorithm=self.config.alg,
                 headers={
@@ -54,7 +55,11 @@ class JWToken(BaseToken[JWTokenConfig]):
                 json_encoder=self.config.json_encoder,
                 sort_headers=self.config.sort_headers
             )
+            self.config.logger.debug('The token is encoded with the'
+                                     f' payload: {payload}')
+            return token
         except Exception as e:
+            self.config.logger.debug('token encode error')
             raise EncodeTokenError from e
 
     @classmethod

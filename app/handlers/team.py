@@ -75,6 +75,9 @@ class TeamController(BaseController[TeamConfig]):
     async def create_team(
         self, auth_client: AccessTokenPayload, db: DataBase, data: CreateTeamDTO
     ) -> TeamDTO:
+        if data.name in self.config.restricted_name_list:
+            raise litestar_raise(error.TeamNameNotUnique)
+
         try:
             team = await db.create_team(
                 name=data.name,
@@ -93,91 +96,6 @@ class TeamController(BaseController[TeamConfig]):
             vip_end=team.vip_end,
             owner_id=team.owner_id
         )
-
-    @post('delete-request/{team_name:str}', responses={
-        401: litestar_response_spec(examples=[
-            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
-        ]),
-        403: litestar_response_spec(examples=[
-            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
-        ]),
-        422: litestar_response_spec(examples=[
-            Example('EmailNonExistent', value=error.EmailNonExistent()),
-            Example('TeamNotExists', value=error.TeamNotExists())
-        ])
-    }, tags=[tags.team_handler])
-    async def delete_request_team(
-        self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
-        token_type: type[Token], token_config: TokenConfigType, lang: Language,
-        team_name: str
-    ) -> None:
-        try:
-            team = await db.get_team_by_name_with_owner(team_name)
-        except TeamsNotExistsError:
-            raise litestar_raise(error.TeamNotExists)
-
-        if team.owner.id != auth_client.sub:
-            raise litestar_raise(error.UserNotTeamOwner)
-
-        delete_team_token = create_delete_team_token(
-            token_type=token_type,
-            token_config=token_config,
-            exp=self.config.delete_team_token_exp,
-            sub=team.id
-        )
-
-        try:
-            await mailer.send(
-                subject=EMAIL_DELETE_TEAM_SUBJECT[lang],
-                body=EMAIL_DELETE_TEAM_BODY[lang].format(
-                    delete_team_token.encode()
-                ),
-                to_email=team.owner.email
-            )
-        except NonExistentEmail:
-            raise litestar_raise(error.EmailNonExistent)
-
-    @delete('delete/{delete_team_token:str}', responses={
-        401: litestar_response_spec(examples=[
-            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
-            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
-            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
-        ]),
-        403: litestar_response_spec(examples=[
-            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
-        ]),
-        422: litestar_response_spec(examples=[
-            Example('DeleteTeamTokenInvalid', value=error.DeleteTeamTokenInvalid()),  # noqa: E501
-            Example('TeamNotExists', value=error.TeamNotExists())
-        ])
-    }, tags=[tags.team_handler])
-    async def delete_team(
-        self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
-        token_config: TokenConfigType, delete_team_token: DeleteTeamToken
-    ) -> None:
-        try:
-            encode_delete_team_token = verify_delete_team_token(
-                token=delete_team_token,
-                token_type=token_type,
-                token_config=token_config
-            )
-            delete_team_token_payload: DeleteTeamTokenPayload = (
-                encode_delete_team_token.payload
-            )  # type: ignore
-        except DecodeTokenError:
-            raise litestar_raise(error.DeleteTeamTokenInvalid)
-
-        try:
-            owner = await db.get_team_owner(delete_team_token_payload.sub)
-        except TeamsNotExistsError:
-            raise litestar_raise(error.TeamNotExists)
-
-        if owner.id != auth_client.sub:
-            raise litestar_raise(error.UserNotTeamOwner)
-
-        await db.del_team(delete_team_token_payload.sub)
 
     @patch('/{team_id:str}', responses={
         401: litestar_response_spec(examples=[
@@ -218,3 +136,88 @@ class TeamController(BaseController[TeamConfig]):
             vip_end=team.vip_end,
             owner_id=team.owner_id
         )
+
+    @post('delete-request/{team_name:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
+        ]),
+        403: litestar_response_spec(examples=[
+            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('EmailNonExistent', value=error.EmailNonExists()),
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    }, tags=[tags.team_handler])
+    async def delete_request_team(
+        self, auth_client: AccessTokenPayload, db: DataBase, mailer: Mailer,
+        token_type: type[Token], token_config: TokenConfigType, lang: Language,
+        team_name: str
+    ) -> None:
+        try:
+            team = await db.get_team_by_name_with_owner(team_name)
+        except TeamsNotExistsError:
+            raise litestar_raise(error.TeamNotExists)
+
+        if team.owner.id != auth_client.sub:
+            raise litestar_raise(error.UserNotTeamOwner)
+
+        delete_team_token = create_delete_team_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.delete_team_token_exp,
+            sub=team.id
+        )
+
+        try:
+            await mailer.send(
+                subject=EMAIL_DELETE_TEAM_SUBJECT[lang],
+                body=EMAIL_DELETE_TEAM_BODY[lang].format(
+                    delete_team_token.encode()
+                ),
+                to_email=team.owner.email
+            )
+        except NonExistentEmail:
+            raise litestar_raise(error.EmailNonExists)
+
+    @delete('delete/{delete_team_token:str}', responses={
+        401: litestar_response_spec(examples=[
+            Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
+            Example('AccessTokenExpired', value=error.AccessTokenExpired()),
+            Example('AuthorizationHeaderMissing', value=error.AuthorizationHeaderMissing())  # noqa
+        ]),
+        403: litestar_response_spec(examples=[
+            Example('UserNotTeamOwner', value=error.UserNotTeamOwner())
+        ]),
+        422: litestar_response_spec(examples=[
+            Example('DeleteTeamTokenInvalid', value=error.DeleteTeamTokenInvalid()),  # noqa: E501
+            Example('TeamNotExists', value=error.TeamNotExists())
+        ])
+    }, tags=[tags.team_handler])
+    async def delete_team(
+        self, auth_client: AccessTokenPayload, db: DataBase, token_type: type[Token],
+        token_config: TokenConfigType, delete_team_token: DeleteTeamToken
+    ) -> None:
+        try:
+            encode_delete_team_token = verify_delete_team_token(
+                token=delete_team_token,
+                token_type=token_type,
+                token_config=token_config
+            )
+            delete_team_token_payload: DeleteTeamTokenPayload = (
+                encode_delete_team_token.payload
+            )  # type: ignore
+        except DecodeTokenError:
+            raise litestar_raise(error.DeleteTeamTokenInvalid)
+
+        try:
+            owner = await db.get_team_owner(delete_team_token_payload.sub)
+        except TeamsNotExistsError:
+            raise litestar_raise(error.TeamNotExists)
+
+        if owner.id != auth_client.sub:
+            raise litestar_raise(error.UserNotTeamOwner)
+
+        await db.del_team(delete_team_token_payload.sub)

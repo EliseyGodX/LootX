@@ -1,5 +1,6 @@
-# flake8-in-file-ignores: noqa: WPS201, WPS202
+# flake8-in-file-ignores: noqa: WPS201, WPS202, WPS203
 
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, NoReturn
 
@@ -11,15 +12,17 @@ from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
 
 from app.caches.base import BaseAsyncTTLCache
-from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, DataBase,
-                        DataBaseConfig, Mailer, MailerConfig, TaskManager,
-                        TaskManagerConfig, Token, TokenConfig, WoWAPI,
-                        WoWAPIConfig, allow_origins, open_api_render_plugins)
+from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, CacheKeys,
+                        DataBase, DataBaseConfig, Mailer, MailerConfig,
+                        TaskManager, TaskManagerConfig, Token, TokenConfig,
+                        WoWAPI, WoWAPIConfig, allow_origins, logging_config,
+                        open_api_render_plugins)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.db.wow_api.base import BaseAsyncWoWAPI
 from app.dependencies import auth_client, get_language
 from app.handlers.auth import AuthController
+from app.handlers.core import CoreController
 from app.handlers.item import ItemController
 from app.handlers.log import LogController
 from app.handlers.queue import QueueController
@@ -33,11 +36,14 @@ from app.tokens.configs import BaseTokenConfig
 from app.tokens.payloads import AccessTokenPayload
 from app.types import UserId
 
+logger = logging.getLogger('app.main')
+
 
 @asynccontextmanager
 async def lifespan(app: Litestar) -> AsyncIterator[None]:  # noqa: WPS213
     app.state.db = DataBase(DataBaseConfig)
     app.state.cache = Cache(CacheConfig)
+    app.state.cache_keys = CacheKeys()
     app.state.mailer = Mailer(MailerConfig)
     app.state.wow_api = WoWAPI(WoWAPIConfig)
     app.state.task_manager = TaskManager(
@@ -54,6 +60,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:  # noqa: WPS213
     await app.state.wow_api.connect()
     await app.state.task_manager.connect()
 
+    logger.info(f'{SERVICE_NAME}: App started')
     yield
 
     await app.state.db.close()
@@ -74,6 +81,10 @@ def provide_db() -> BaseAsyncDB:
 
 def provide_cache() -> BaseAsyncTTLCache:
     return app.state.cache
+
+
+def provide_cache_keys() -> dict[str, str]:
+    return app.state.cache_keys
 
 
 def provide_mailer() -> BaseAsyncMailer:
@@ -105,16 +116,18 @@ def provide_auth_client_dep(request: Request) -> AccessTokenPayload:
 
 
 def database_exc_handler(request: Request, exc: DatabaseError) -> NoReturn:
+    logger.critical('DataBase error:', exc, exc_info=True)
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
+    logger.critical('Mailer error:', exc, exc_info=True)
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 app = Litestar(
     route_handlers=[AuthController, TeamController, UserController, RaiderController,
-                    ItemController, QueueController, LogController],
+                    ItemController, QueueController, LogController, CoreController],
     openapi_config=OpenAPIConfig(
         title=f'{SERVICE_NAME} API',
         version=VERSION,
@@ -123,6 +136,7 @@ app = Litestar(
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
         'cache': Provide(provide_cache, sync_to_thread=False),
+        'cache_keys': Provide(provide_cache_keys, sync_to_thread=False),
         'mailer': Provide(provide_mailer, sync_to_thread=False),
         'task_manager': Provide(provide_task_manager, sync_to_thread=False),
         'wow_api': Provide(provide_wow_api, sync_to_thread=False),
@@ -137,5 +151,5 @@ app = Litestar(
         MailerError: mailer_exc_handler
     },
     cors_config=CORSConfig(allow_origins=allow_origins),
-    debug=True
+    logging_config=logging_config
 )

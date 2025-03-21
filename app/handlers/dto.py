@@ -117,3 +117,9 @@ class LogListDTO(BaseDTO):
     limit: int | None
     offset: int | None
     logs: list[LogDTO]
+
+
+class FullTeamDTO(BaseDTO):
+    team: TeamDTO
+    owner: UserDTO
+    queues: list[QueueListDTO]

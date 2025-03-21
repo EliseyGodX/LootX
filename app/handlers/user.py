@@ -24,25 +24,6 @@ class UserController(BaseController[UserConfig]):
     config = UserConfig()
     path = '/user'
 
-    @get('/username/{username:str}', responses={
-        422: litestar_response_spec(examples=[
-            Example('UserNotExists', value=error.UserNotExists())
-        ])
-    }, tags=[tags.user_handler])
-    async def get_user_by_username(
-        self, db: DataBase, username: Username
-    ) -> UserDTO:
-        try:
-            user = await db.get_user_by_username(username)
-            return UserDTO(
-                id=user.id,
-                username=user.username,
-                email=user.email,
-                is_active=user.is_active
-            )
-        except UserNotFoundError:
-            raise litestar_raise(error.UserNotExists)
-
     @get('/id/{user_id:str}', responses={
         422: litestar_response_spec(examples=[
             Example('UserNotExists', value=error.UserNotExists())
@@ -62,6 +43,25 @@ class UserController(BaseController[UserConfig]):
         except UserNotFoundError:
             raise litestar_raise(error.UserNotExists)
 
+    @get('/username/{username:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('UserNotExists', value=error.UserNotExists())
+        ])
+    }, tags=[tags.user_handler])
+    async def get_user_by_username(
+        self, db: DataBase, username: Username
+    ) -> UserDTO:
+        try:
+            user = await db.get_user_by_username(username)
+            return UserDTO(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                is_active=user.is_active
+            )
+        except UserNotFoundError:
+            raise litestar_raise(error.UserNotExists)
+
     @post('/change-password-request', responses={
         401: litestar_response_spec(examples=[
             Example('AccessTokenInvalid', value=error.AccessTokenInvalid()),
@@ -70,7 +70,7 @@ class UserController(BaseController[UserConfig]):
         ]),
         422: litestar_response_spec(examples=[
             Example('UserNotExists', value=error.UserNotExists()),
-            Example('EmailNonExistent', value=error.EmailNonExistent())
+            Example('EmailNonExistent', value=error.EmailNonExists())
         ])
     }, tags=[tags.user_handler])
     async def change_password_request(
@@ -98,7 +98,7 @@ class UserController(BaseController[UserConfig]):
                 to_email=user_email
             )
         except NonExistentEmail:
-            raise litestar_raise(error.EmailNonExistent)
+            raise litestar_raise(error.EmailNonExists)
 
     @patch('change-password/{change_password_token:str}', responses={
         401: litestar_response_spec(examples=[

@@ -1,5 +1,53 @@
 # flake8-in-file-ignores: noqa: WPS432
 
+"""This module defines a collection of error models.
+
+### Error Models
+The error models inherit from the `BaseError` class and represent various types
+    of errors that can occur in the application.
+
+Each error model includes:
+- `status_code`: The HTTP status code associated with the error.
+- `detail`: A brief description of the HTTP status.
+- `extra`: A dictionary containing additional information, including:
+    - `error_code`: A unique identifier for the error.
+    - `message`: A human-readable description of the error.
+
+The error codes are categorized into groups based on their nature, such as:
+- Missing required elements (`miss-X`).
+- Invalid inputs or tokens (`inv-X`).
+- Uniqueness violations (`uniq-X`).
+- Non-existent entities (`exist-X`).
+- Expired tokens (`exp-X`).
+- Other errors (`other-X`).
+
+### Utility Functions
+1. `litestar_raise`:
+     A helper function to raise an `HTTPException` using a specified error model.
+     It allows adding custom headers or additional data to the error's `extra` field.
+     Example usage:
+     ```python
+     raise litestar_raise(error.EmailNotUnique)
+     ```
+2. `litestar_response_spec`:
+     A helper function to generate a `ResponseSpec` for documenting API responses
+        in OpenAPI.
+     It accepts a list of `Example` objects to provide example error responses
+        for specific HTTP status codes.
+     Example usage:
+     ```python
+     @post('/registration', responses={
+             409: litestar_response_spec(examples=[
+                     Example('UsernameNotUnique', value=error.UsernameNotUnique()),
+                     Example('EmailNotUnique', value=error.EmailNotUnique())
+             ])
+     })
+     ```
+
+These utilities streamline error handling and improve API documentation by providing
+    consistent error structures and examples.
+"""
+
 from http import HTTPStatus
 from typing import Any, Mapping
 
@@ -16,39 +64,38 @@ class BaseError(BaseModel):
     detail: str = ''
     extra: dict = {}
 
+###
+# miss-X: Error codes for missing required elements
+###
 
-class UsernameNotUnique(BaseError):
-    status_code: int = 409
-    detail: str = HTTPStatus(409).phrase
+
+class AuthorizationHeaderMissing(BaseError):
+    status_code: int = 401
+    detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 1,
-        'message': 'Username not unique'
+        'error_code': 'miss-1',
+        'message': 'Authorization header missing'
     }
 
 
-class EmailNotUnique(BaseError):
-    status_code: int = 409
-    detail: str = HTTPStatus(409).phrase
+class RefreshTokenHeaderMissing(BaseError):
+    status_code: int = 401
+    detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 2,
-        'message': 'Email not unique'
+        'error_code': 'miss-2',
+        'message': 'Refresh token missing in header'
     }
 
 
-class EmailNonExistent(BaseError):
-    status_code: int = 422
-    detail: str = HTTPStatus(422).phrase
-    extra: dict = {
-        'error_code': 3,
-        'message': 'Email does not exist'
-    }
-
+###
+# inv-X: Error codes for invalid inputs or tokens
+###
 
 class RegistrationTokenInvalid(BaseError):
     status_code: int = 422
     detail: str = HTTPStatus(422).phrase
     extra: dict = {
-        'error_code': 4,
+        'error_code': 'inv-1',
         'message': 'Registration token is invalid'
     }
 
@@ -57,7 +104,7 @@ class AccessTokenInvalid(BaseError):
     status_code: int = 401
     detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 5,
+        'error_code': 'inv-2',
         'message': 'Access token is invalid'
     }
 
@@ -66,71 +113,8 @@ class RefreshTokenInvalid(BaseError):
     status_code: int = 401
     detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 6,
+        'error_code': 'inv-3',
         'message': 'Refresh token is invalid'
-    }
-
-
-class UserIsActive(BaseError):
-    status_code: int = 403
-    detail: str = HTTPStatus(403).phrase
-    extra: dict = {
-        'error_code': 7,
-        'message': 'The user is already active'
-    }
-
-
-class TeamNameNotUnique(BaseError):
-    status_code: int = 409
-    detail: str = HTTPStatus(409).phrase
-    extra: dict = {
-        'error_code': 8,
-        'message': 'The team name is already active'
-    }
-
-
-class TeamNotExists(BaseError):
-    status_code: int = 422
-    detail: str = HTTPStatus(422).phrase
-    extra: dict = {
-        'error_code': 9,
-        'message': 'The team does not exist'
-    }
-
-
-class UserNotExists(BaseError):
-    status_code: int = 422
-    detail: str = HTTPStatus(422).phrase
-    extra: dict = {
-        'error_code': 10,
-        'message': 'User not exists'
-    }
-
-
-class InvalidCredentials(BaseError):
-    status_code: int = 401
-    detail: str = HTTPStatus(401).phrase
-    extra: dict = {
-        'error_code': 11,
-        'message': 'Invalid credentials'
-    }
-
-
-class AuthorizationHeaderMissing(BaseError):
-    status_code: int = 401
-    detail: str = HTTPStatus(401).phrase
-    extra: dict = {
-        'error_code': 13,
-        'message': 'Authorization header missing'
-    }
-
-
-class RefreshTokenMissing(BaseError):
-    status_code: int = 401
-    detail: str = HTTPStatus(401).phrase
-    extra: dict = {
-        'error_code': 14,
-        'message': 'Refresh token missing in cookie'
     }
 
 
@@ -138,7 +122,7 @@ class ChangePasswordTokenInvalid(BaseError):
     status_code: int = 422
     detail: str = HTTPStatus(422).phrase
     extra: dict = {
-        'error_code': 16,
+        'error_code': 'inv-4',
         'message': 'Change password token is invalid'
     }
 
@@ -147,35 +131,39 @@ class DeleteTeamTokenInvalid(BaseError):
     status_code: int = 422
     detail: str = HTTPStatus(422).phrase
     extra: dict = {
-        'error_code': 17,
+        'error_code': 'inv-5',
         'message': 'Delete team token is invalid'
     }
 
+###
+# uniq-X: Error codes for uniqueness violations
+###
 
-class UserNotTeamOwner(BaseError):
-    status_code: int = 403
-    detail: str = HTTPStatus(403).phrase
+
+class UsernameNotUnique(BaseError):
+    status_code: int = 409
+    detail: str = HTTPStatus(409).phrase
     extra: dict = {
-        'error_code': 18,
-        'message': 'The action is available only to the owner of the team'
+        'error_code': 'uniq-1',
+        'message': 'Username not unique'
     }
 
 
-class TokensSubjectNotEqual(BaseError):
-    status_code: int = 403
-    detail: str = HTTPStatus(403).phrase
+class EmailNotUnique(BaseError):
+    status_code: int = 409
+    detail: str = HTTPStatus(409).phrase
     extra: dict = {
-        'error_code': 19,
-        'message': 'Tokens subject not equal'
+        'error_code': 'uniq-2',
+        'message': 'Email not unique'
     }
 
 
-class RaiderNotExists(BaseError):
-    status_code: int = 422
-    detail: str = HTTPStatus(422).phrase
+class TeamNameNotUnique(BaseError):
+    status_code: int = 409
+    detail: str = HTTPStatus(409).phrase
     extra: dict = {
-        'error_code': 20,
-        'message': 'Raider not exists'
+        'error_code': 'uniq-3',
+        'message': 'The team name is already active'
     }
 
 
@@ -183,9 +171,49 @@ class RaiderNotUnique(BaseError):
     status_code: int = 409
     detail: str = HTTPStatus(409).phrase
     extra: dict = {
-        'error_code': 21,
+        'error_code': 'uniq-4',
         'message': ('Active raider with the same name or class already exists'
                     'in the team')
+    }
+
+
+###
+# exist-X: Error codes for non-existent entities
+###
+
+class EmailNonExists(BaseError):
+    status_code: int = 422
+    detail: str = HTTPStatus(422).phrase
+    extra: dict = {
+        'error_code': 'exist-1',
+        'message': 'Email does not exist'
+    }
+
+
+class TeamNotExists(BaseError):
+    status_code: int = 422
+    detail: str = HTTPStatus(422).phrase
+    extra: dict = {
+        'error_code': 'exist-2',
+        'message': 'The team does not exist'
+    }
+
+
+class UserNotExists(BaseError):
+    status_code: int = 422
+    detail: str = HTTPStatus(422).phrase
+    extra: dict = {
+        'error_code': 'exist-3',
+        'message': 'User not exists'
+    }
+
+
+class RaiderNotExists(BaseError):
+    status_code: int = 422
+    detail: str = HTTPStatus(422).phrase
+    extra: dict = {
+        'error_code': 'exist-4',
+        'message': 'Raider not exists'
     }
 
 
@@ -193,7 +221,7 @@ class ItemNotExists(BaseError):
     status_code: int = 422
     detail: str = HTTPStatus(422).phrase
     extra: dict = {
-        'error_code': 22,
+        'error_code': 'exist-5',
         'message': 'Item not exists'
     }
 
@@ -202,16 +230,20 @@ class QueueNotExists(BaseError):
     status_code: int = 422
     detail: str = HTTPStatus(422).phrase
     extra: dict = {
-        'error_code': 22,
+        'error_code': 'exist-6',
         'message': 'Queue not exists'
     }
 
+
+###
+# exp-X: Error codes for expired tokens
+###
 
 class AccessTokenExpired(BaseError):
     status_code: int = 401
     detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 23,
+        'error_code': 'exp-1',
         'message': 'Access token expired'
     }
 
@@ -220,8 +252,48 @@ class RefreshTokenExpired(BaseError):
     status_code: int = 401
     detail: str = HTTPStatus(401).phrase
     extra: dict = {
-        'error_code': 24,
+        'error_code': 'exp-2',
         'message': 'Refresh token expired'
+    }
+
+###
+# other-X: Error codes for other types of errors
+###
+
+
+class UserIsActive(BaseError):
+    status_code: int = 403
+    detail: str = HTTPStatus(403).phrase
+    extra: dict = {
+        'error_code': 'other-1',
+        'message': 'The user is already active'
+    }
+
+
+class InvalidCredentials(BaseError):
+    status_code: int = 401
+    detail: str = HTTPStatus(401).phrase
+    extra: dict = {
+        'error_code': 'other-2',
+        'message': 'Invalid credentials'
+    }
+
+
+class UserNotTeamOwner(BaseError):
+    status_code: int = 403
+    detail: str = HTTPStatus(403).phrase
+    extra: dict = {
+        'error_code': 'other-3',
+        'message': 'The action is available only to the owner of the team'
+    }
+
+
+class TokensSubjectNotEqual(BaseError):
+    status_code: int = 403
+    detail: str = HTTPStatus(403).phrase
+    extra: dict = {
+        'error_code': 'other-4',
+        'message': 'Tokens subject not equal'
     }
 
 

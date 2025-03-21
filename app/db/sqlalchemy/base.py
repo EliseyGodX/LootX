@@ -5,24 +5,24 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import AsyncGenerator, Literal, NoReturn, Sequence
 
-from sqlalchemy import case, delete, select, exists
+from sqlalchemy import case, delete, exists, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.db.abc.base import BaseAsyncDB, get_id
-from app.db.abc.models import (QueueProtocol, RaiderProtocol, TeamProtocol,
-                               UserProtocol, WoWItemProtocol, LogProtocol)
+from app.db.abc.models import (LogProtocol, QueueProtocol, RaiderProtocol,
+                               TeamProtocol, UserProtocol, WoWItemProtocol)
 from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
 from app.db.exc import (ActivateUserError, DatabaseError,
-                        InvalidCredentialsError, WoWItemNotFoundError,
-                        RaiderNotFoundError, RaiderNotUnique,
-                        TeamsNotExistsError, UniqueEmailError,
+                        InvalidCredentialsError, RaiderNotFoundError,
+                        RaiderNotUnique, TeamsNotExistsError, UniqueEmailError,
                         UniqueTeamNameError, UniqueUsernameError,
-                        UserNotFoundError)
+                        UserNotFoundError, WoWItemNotFoundError)
 from app.db.sqlalchemy.config import SQLAlchemyDBConfig
-from app.db.sqlalchemy.models import Base, Queue, Raider, Team, User, WoWItem, Log
+from app.db.sqlalchemy.models import (Base, Log, Queue, Raider, Team, User,
+                                      WoWItem)
 from app.db.wow_api.base import BaseAsyncWoWAPI, WoWAPIItem
 from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
@@ -269,6 +269,14 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 )
             return team  # type: ignore
 
+    async def get_team_id_by_name(self, name: str) -> TeamId:
+        async with self.get_read_session() as session:
+            stmt = select(Team.id).where(Team.name == name)
+            team_id = (await session.execute(stmt)).scalar_one_or_none()
+            if not team_id:
+                raise TeamsNotExistsError(f"Team with name {name} does not exist")
+            return team_id
+
     async def get_team_owner(self, team_id: TeamId) -> UserProtocol:
         async with self.get_read_session() as session:
             stmt = (
@@ -383,7 +391,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
 
         return wow_item  # type: ignore
 
-    async def get_queue(
+    async def get_queue_by_item(
         self, team_id: TeamId, wow_item_id: int
     ) -> Sequence[QueueProtocol]:
         async with self.get_read_session() as session:
@@ -397,6 +405,24 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             )
             queues = (await session.execute(stmt)).scalars().all()
             return queues  # type: ignore
+
+    async def get_queues(
+        self, team_id: TeamId
+    ) -> list[Sequence[QueueProtocol]]:
+        async with self.get_read_session() as session:
+            stmt = (
+                select(Queue)
+                .options(joinedload(Queue.raider))
+                .where(Queue.team_id == team_id)
+                .order_by(Queue.wow_item_id, Queue.position)
+            )
+            queues = (await session.execute(stmt)).scalars().all()
+
+            grouped_queues = {}
+            for queue in queues:
+                grouped_queues.setdefault(queue.wow_item_id, []).append(queue)
+
+            return list(grouped_queues.values())
 
     async def create_queue(
         self, team_id: TeamId, wow_item_id: int, addon: EnumAddons,
@@ -429,7 +455,7 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
             else:
                 raise e
 
-        return await self.get_queue(team_id, wow_item_id)
+        return await self.get_queue_by_item(team_id, wow_item_id)
 
     async def del_queue(self, team_id: TeamId, wow_item_id: int) -> None:
         async with self.get_write_session() as session:
@@ -483,6 +509,13 @@ class AsyncSQLAlchemyDB(BaseAsyncDB[SQLAlchemyDBConfig]):
                 stmt.where(Log.wow_item_id == wow_item_id)
             logs = (await session.execute(stmt)).scalars().all()
         return logs  # type: ignore
+
+    async def get_full_team(  # noqa: WPS234
+        self, team_id: TeamId
+    ) -> tuple[TeamProtocol, list[Sequence[QueueProtocol]]]:
+        team = await self.get_team_with_owner(team_id)
+        queues = await self.get_queues(team.id)
+        return team, queues
 
     async def close(self) -> None:
         await self.engine.dispose()

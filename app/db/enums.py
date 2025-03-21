@@ -27,6 +27,9 @@ class EnumAddons(Enum):
     tbc = 'tbc'
     wotlk = 'wotlk'
 
+    def __repr__(self) -> str:
+        return f'{self.value!r}'
+
 
 class EnumLanguages(Enum):
     ru = 'ru'

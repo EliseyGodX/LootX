@@ -8,6 +8,7 @@ from app.types import Seconds
 
 
 class BaseTaskManagerConfig(BaseModel):
+    logger: Logger
 
     class Config:
         arbitrary_types_allowed = True
@@ -15,7 +16,6 @@ class BaseTaskManagerConfig(BaseModel):
 
 class KapustaConfig(BaseTaskManagerConfig):
     crud: BaseCRUD
-    logger: Logger
     max_tick_interval: Seconds
     default_overdue_time_delta: timedelta | None
     default_max_retry_attempts: int

@@ -28,13 +28,52 @@ class AuthController(BaseController[AuthConfig]):
     config = AuthConfig()
     path = '/auth'
 
+    @post('/', responses={
+        401: litestar_response_spec(examples=[
+            Example('InvalidCredentials', value=error.InvalidCredentials())
+        ])
+    }, tags=[tags.auth_handler])
+    async def authentication(
+        self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
+        data: AuthDTO
+    ) -> Response[None]:
+        try:
+            user_id = await db.verify_username_password(
+                username=data.username,
+                password=data.password
+            )
+        except InvalidCredentialsError:
+            raise litestar_raise(error.InvalidCredentials)
+
+        access_token = create_access_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=user_id
+        )
+
+        refresh_token = create_refresh_token(
+            token_type=token_type,
+            token_config=token_config,
+            exp=self.config.access_token_exp,
+            sub=user_id
+        )
+
+        return Response(
+            content=None,
+            headers={
+                'X-New-Access-Token': access_token.encode(),
+                'X-New-Refresh-Token': refresh_token.encode()
+            }
+        )
+
     @post('/registration', responses={
         409: litestar_response_spec(examples=[
             Example('UsernameNotUnique', value=error.UsernameNotUnique()),
             Example('EmailNotUnique', value=error.EmailNotUnique())
         ]),
         422: litestar_response_spec(examples=[
-            Example('EmailNonExistent', value=error.EmailNonExistent())
+            Example('EmailNonExistent', value=error.EmailNonExists())
         ])
     }, tags=[tags.auth_handler])
     async def registration(
@@ -66,7 +105,7 @@ class AuthController(BaseController[AuthConfig]):
                 to_email=data.email
             )
         except NonExistentEmail:
-            raise litestar_raise(error.EmailNonExistent)
+            raise litestar_raise(error.EmailNonExists)
 
         registration_user = await db.create_user(
             username=data.username,
@@ -130,48 +169,9 @@ class AuthController(BaseController[AuthConfig]):
         return Response(
             content=None,
             headers={
-                "Set-Cookie":
+                'Set-Cookie':
                     f"refresh-token={refresh_token.encode()}; HttpOnly; Path=/; Secure",
-                "Authorization": f"Bearer {access_token.encode()}"
-            }
-        )
-
-    @post('/', responses={
-        401: litestar_response_spec(examples=[
-            Example('InvalidCredentials', value=error.InvalidCredentials())
-        ])
-    }, tags=[tags.auth_handler])
-    async def authentication(
-        self, db: DataBase, token_type: type[Token], token_config: TokenConfigType,
-        data: AuthDTO
-    ) -> Response[None]:
-        try:
-            user_id = await db.verify_username_password(
-                username=data.username,
-                password=data.password
-            )
-        except InvalidCredentialsError:
-            raise litestar_raise(error.InvalidCredentials)
-
-        access_token = create_access_token(
-            token_type=token_type,
-            token_config=token_config,
-            exp=self.config.access_token_exp,
-            sub=user_id
-        )
-
-        refresh_token = create_refresh_token(
-            token_type=token_type,
-            token_config=token_config,
-            exp=self.config.access_token_exp,
-            sub=user_id
-        )
-
-        return Response(
-            content=None,
-            headers={
-                "X-New-Access-Token": access_token.encode(),
-                "X-New-Refresh-Token": refresh_token.encode()
+                'Authorization': f"Bearer {access_token.encode()}"
             }
         )
 
@@ -179,7 +179,7 @@ class AuthController(BaseController[AuthConfig]):
         401: litestar_response_spec(examples=[
             Example('RefreshTokenExpired', value=error.RefreshTokenExpired()),
             Example('RefreshTokenInvalid', value=error.RefreshTokenInvalid()),
-            Example('RefreshTokenMissing', value=error.RefreshTokenMissing())
+            Example('RefreshTokenMissing', value=error.RefreshTokenHeaderMissing())
         ])
     }, tags=[tags.auth_handler])
     async def refresh(
@@ -202,7 +202,7 @@ class AuthController(BaseController[AuthConfig]):
             raise litestar_raise(error.RefreshTokenInvalid)
 
         except KeyError:
-            raise litestar_raise(error.RefreshTokenMissing)
+            raise litestar_raise(error.RefreshTokenHeaderMissing)
 
         new_access_token = create_access_token(
             token_type=token_type,
@@ -220,7 +220,7 @@ class AuthController(BaseController[AuthConfig]):
         return Response(
             content=None,
             headers={
-                "X-New-Access-Token": new_access_token.encode(),
-                "X-New-Refresh-Token": new_refresh_token.encode()
+                'X-New-Access-Token': new_access_token.encode(),
+                'X-New-Refresh-Token': new_refresh_token.encode()
             }
         )

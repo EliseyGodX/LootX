@@ -1,10 +1,12 @@
 from json import JSONEncoder
+from logging import Logger
 from typing import Optional
 
 from pydantic import BaseModel
 
 
 class BaseTokenConfig(BaseModel):
+    logger: Logger
 
     class Config:
         arbitrary_types_allowed = True

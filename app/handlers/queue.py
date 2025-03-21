@@ -5,7 +5,7 @@ from litestar.openapi.spec import Example
 
 from app import errors as error
 from app import openapi_tags as tags
-from app.config import DataBase, Language, QueueConfig, WoWAPI
+from app.config import DataBase, Language, QueueConfig, WoWAPI, Cache, CacheKeys
 from app.db.exc import (RaiderNotFoundError, TeamsNotExistsError,
                         WoWItemNotFoundError)
 from app.errors import litestar_raise, litestar_response_spec
@@ -37,7 +37,7 @@ class QueueController(BaseController[QueueConfig]):
                         is_active=queue.raider.is_active
                     ),
                 ) for queue
-                in await db.get_queue(team_id, wow_item_id)
+                in await db.get_queue_by_item(team_id, wow_item_id)
             ]
         )
 
@@ -57,8 +57,8 @@ class QueueController(BaseController[QueueConfig]):
         ])
     }, tags=[tags.queue_handler])
     async def update_queue(
-        self, auth_client: AccessTokenPayload, db: DataBase, lang: Language,
-        wow_api: WoWAPI, data: CreateQueueDTO
+        self, auth_client: AccessTokenPayload, db: DataBase, cache: Cache,
+        cache_keys: CacheKeys, lang: Language, wow_api: WoWAPI, data: CreateQueueDTO
     ) -> QueueListDTO:
         try:
             team = await db.get_team_with_owner(data.team_id)
@@ -99,6 +99,9 @@ class QueueController(BaseController[QueueConfig]):
                 wow_item_id=data.wow_item_id,
                 queue=str([queue.model_dump() for queue in queue_list.queue])
             )
+            await cache.del_key(
+                cache_keys.full_team.format(team.id)
+            )
             return queue_list
         except RaiderNotFoundError:
             raise litestar_raise(error.RaiderNotExists)
@@ -120,8 +123,8 @@ class QueueController(BaseController[QueueConfig]):
         ])
     }, tags=[tags.queue_handler])
     async def delete_queue(
-        self, auth_client: AccessTokenPayload, db: DataBase, team_id: TeamId,
-        wow_item_id: int
+        self, auth_client: AccessTokenPayload, db: DataBase, cache: Cache,
+        cache_keys: CacheKeys, team_id: TeamId, wow_item_id: int
     ) -> None:
         try:
             owner = await db.get_team_owner(team_id)
@@ -133,5 +136,9 @@ class QueueController(BaseController[QueueConfig]):
 
         if not await db.is_queue_exists(team_id, wow_item_id):
             raise litestar_raise(error.QueueNotExists)
+
+        await cache.del_key(
+            cache_keys.full_team.format(team_id)
+        )
 
         await db.del_queue(team_id, wow_item_id)

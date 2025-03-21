@@ -45,9 +45,10 @@ class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
             )
             await self.smtp_session.connect()
             await self.smtp_session.noop()
+            self.config.logger.info('SMTP: connect')
 
         except Exception as e:
-            self.config.logger.warning(e)
+            self.config.logger.critical(e, exc_info=True)
             raise MailerError from e
 
         return self
@@ -62,12 +63,14 @@ class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
             await self.smtp_session.send_message(msg)
 
         except aiosmtplib.SMTPRecipientsRefused as e:
+            self.config.logger.debug('SMTP: Recipients refused')
             raise NonExistentEmail from e
 
         except Exception as e:
-            self.config.logger.warning(e)
+            self.config.logger.warning(e, exc_info=True)
             raise MailerError from e
 
     async def close(self) -> None:
         if self.smtp_session:
             self.smtp_session.close()
+        self.config.logger.info('SMTP: close')

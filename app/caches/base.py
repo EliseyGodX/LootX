@@ -25,7 +25,10 @@ class BaseAsyncTTLCache(ABC, Generic[CacheConfig]):
     ) -> None: ...
 
     @abstractmethod
-    async def get(self, key: str) -> bytes | None: ...
+    async def get(self, key: str) -> str | None: ...
+
+    @abstractmethod
+    async def del_key(self, key: str) -> None: ...
 
     @abstractmethod
     async def close(self) -> None: ...
@@ -39,6 +42,7 @@ class RedisAsyncCache(BaseAsyncTTLCache[RedisConfig]):
             host=self.config.redis_host,
             port=self.config.redis_port
         )
+        self.config.logger.info('Redis: connect')
         return self
 
     async def set(
@@ -51,15 +55,25 @@ class RedisAsyncCache(BaseAsyncTTLCache[RedisConfig]):
                 value=value,
                 ex=time if time else self.config.default_cache_lifetime
             )
-
+            self.config.logger.debug(f'Set cache value with key: {key}')
         except Exception as e:
-            self.config.logger.warning(e)
+            self.config.logger.warning(e, exc_info=True)
 
-    async def get(self, key: str) -> bytes | None:
+    async def get(self, key: str) -> str | None:
         try:
-            return await self.redis.get(name=key)
+            cached_value = await self.redis.get(name=key)
+            self.config.logger.debug(f'Get value by key: {key}')
+            return cached_value.decode() if cached_value else None
         except Exception as e:
-            self.config.logger.warning(e)
+            self.config.logger.warning(e, exc_info=True)
+
+    async def del_key(self, key: str) -> None:
+        try:
+            await self.redis.delete(key)
+            self.config.logger.debug(f'Deleted cache key: {key}')
+        except Exception as e:
+            self.config.logger.warning(e, exc_info=True)
 
     async def close(self) -> None:
         await self.redis.close()
+        self.config.logger.info('Redis: close')

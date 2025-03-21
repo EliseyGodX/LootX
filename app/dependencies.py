@@ -24,7 +24,7 @@ def auth_client(
 ) -> AccessTokenPayload:
     try:
         access_token = token_type.decode(
-            token=request.headers['Authorization'].split(" ", 1)[1],
+            token=request.headers['Authorization'].split(' ', 1)[1],
             config=token_config,
             payload_type=AccessTokenPayload
         )

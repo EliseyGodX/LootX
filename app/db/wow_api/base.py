@@ -61,7 +61,7 @@ class WoWHeadAPI(BaseAsyncWoWAPI[WoWHeadAPIConfig]):
             return None
 
         root = ET.fromstring(response.text)
-        item_elem = root.find("item")
+        item_elem = root.find('item')
         if item_elem is None:
             return None
 
@@ -69,11 +69,11 @@ class WoWHeadAPI(BaseAsyncWoWAPI[WoWHeadAPIConfig]):
             wow_id=int(id),
             addon=addon,
             lang=lang,
-            html_tooltip=item_elem.findtext("htmlTooltip", ""),
+            html_tooltip=item_elem.findtext('htmlTooltip', ''),
             icon_url=self.config.icon_url.format(
-                icon=item_elem.findtext("icon", "")
+                icon=item_elem.findtext('icon', '')
             ),
-            origin_link=item_elem.findtext("link", "")
+            origin_link=item_elem.findtext('link', '')
         )
 
     async def close(self) -> None:
