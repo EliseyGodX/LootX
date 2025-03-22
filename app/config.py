@@ -7,7 +7,6 @@ from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Mapping
 
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
@@ -76,28 +75,6 @@ logging_config = LoggingConfig(
 DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore
 
 open_api_render_plugins = [SwaggerRenderPlugin()]
-
-
-EMAIL_REGISTRATION_SUBJECT: Mapping[Language, str] = MappingProxyType({
-    Language.en: 'Registration'
-})
-EMAIL_REGISTRATION_BODY: Mapping[Language, str] = MappingProxyType({
-    Language.en: '{}'
-})
-
-EMAIL_CHANGE_PASSWORD_SUBJECT: Mapping[Language, str] = MappingProxyType({
-    Language.en: 'change password'
-})
-EMAIL_CHANGE_PASSWORD_BODY: Mapping[Language, str] = MappingProxyType({
-    Language.en: '{}'
-})
-
-EMAIL_DELETE_TEAM_SUBJECT: Mapping[Language, str] = MappingProxyType({
-    Language.en: 'delete team'
-})
-EMAIL_DELETE_TEAM_BODY: Mapping[Language, str] = MappingProxyType({
-    Language.en: '{}'
-})
 
 _db_logger = logging.getLogger('sqlalchemy.engine')
 _db_logger.setLevel(logging.INFO)
@@ -222,3 +199,182 @@ class LogConfig(BaseConfig):
 @dataclass(frozen=True)
 class CoreConfig(BaseConfig):
     ...
+
+
+EMAIL_REGISTRATION_SUBJECT = MappingProxyType({
+    Language.en: 'LootX: Registration',
+    Language.ru: 'LootX: Регистрация',
+    Language.de: 'LootX: Registrierung',
+    Language.es: 'LootX: Registro',
+    Language.fr: 'LootX: Inscription',
+    Language.it: 'LootX: Registrazione',
+    Language.pt: 'LootX: Registro',
+    Language.ko: 'LootX: 등록',
+    Language.cn: 'LootX: 注册'
+})
+
+EMAIL_REGISTRATION_BODY = MappingProxyType({
+    Language.en: (
+        'To confirm your registration, visit '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Use the link within 5 minutes. Do not share it with anyone.'
+    ),
+    Language.ru: (
+        'Для подтверждения регистрации перейдите по ссылке '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Перейдите по ссылке в течении 5 минут. Никому не передавайте её.'
+    ),
+    Language.de: (
+        'Um Ihre Registrierung zu bestätigen, besuchen Sie '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Nutzen Sie den Link innerhalb von 5 Minuten. Geben Sie ihn niemandem weiter.'
+    ),
+    Language.es: (
+        'Para confirmar su registro, visite '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Use el enlace en 5 minutos. No lo comparta con nadie.'
+    ),
+    Language.fr: (
+        'Pour confirmer votre inscription, visitez '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Utilisez le lien dans les 5 minutes. Ne le partagez avec personne.'
+    ),
+    Language.it: (
+        'Per confermare la registrazione, visita '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Usa il link entro 5 minuti. Non condividerlo con nessuno.'
+    ),
+    Language.pt: (
+        'Para confirmar seu registro, visite '
+        'http://localhost:8000/auth/verify-email/{}\n'
+        'Use o link em 5 minutos. Não o compartilhe com ninguém.'
+    ),
+    Language.ko: (
+        '등록을 확인하려면 http://localhost:8000/auth/verify-email/{} 에 방문하세요.\n'
+        '5분 이내에 링크를 사용하세요. 다른 사람과 공유하지 마세요.'
+    ),
+    Language.cn: (
+        '要确认您的注册，请访问 http://localhost:8000/auth/verify-email/{}\n'
+        '请在 5 分钟内使用该链接。请勿与他人分享。'
+    ),
+})
+
+EMAIL_CHANGE_PASSWORD_SUBJECT = MappingProxyType({
+    Language.en: 'LootX: Change password',
+    Language.ru: 'LootX: Смена пароля',
+    Language.de: 'LootX: Passwort ändern',
+    Language.es: 'LootX: Cambiar contraseña',
+    Language.fr: 'LootX: Changer le mot de passe',
+    Language.it: 'LootX: Cambia la password',
+    Language.pt: 'LootX: Alterar senha',
+    Language.ko: 'LootX: 비밀번호 변경',
+    Language.cn: 'LootX: 更改密码'
+})
+
+EMAIL_CHANGE_PASSWORD_BODY = MappingProxyType({
+    Language.en: (
+        'To reset your password, visit '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Use the link within 5 minutes.'
+    ),
+    Language.ru: (
+        'Для смены пароля перейдите по ссылке '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Перейдите по ссылке в течении 5 минут.'
+    ),
+    Language.de: (
+        'Um Ihr Passwort zu ändern, besuchen Sie '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Nutzen Sie den Link innerhalb von 5 Minuten.'
+    ),
+    Language.es: (
+        'Para cambiar su contraseña, visite '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Use el enlace en 5 minutos.'
+    ),
+    Language.fr: (
+        'Pour changer votre mot de passe, visitez '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Utilisez le lien dans les 5 minutes.'
+    ),
+    Language.it: (
+        'Per cambiare la password, visita '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Usa il link entro 5 minuti.'
+    ),
+    Language.pt: (
+        'Para alterar sua senha, visite '
+        'http://localhost:8000/user/change-password/{}\n'
+        'Use o link em 5 minutos.'
+    ),
+    Language.ko: (
+        '비밀번호를 변경하려면 '
+        'http://localhost:8000/user/change-password/{} 에 방문하세요.\n'
+        '5분 이내에 링크를 사용하세요.'
+    ),
+    Language.cn: (
+        '要更改您的密码，请访问 '
+        'http://localhost:8000/user/change-password/{}\n'
+        '请在 5 分钟内使用该链接。'
+    ),
+})
+
+EMAIL_DELETE_TEAM_SUBJECT = MappingProxyType({
+    Language.en: 'delete team',
+    Language.ru: 'LootX: Удаление команды',
+    Language.de: 'LootX: Team löschen',
+    Language.es: 'LootX: Eliminar equipo',
+    Language.fr: 'LootX: Supprimer l’équipe',
+    Language.it: 'LootX: Eliminare squadra',
+    Language.pt: 'LootX: Excluir equipe',
+    Language.ko: 'LootX: 팀 삭제',
+    Language.cn: 'LootX: 删除团队'
+})
+
+EMAIL_DELETE_TEAM_BODY = MappingProxyType({
+    Language.en: (
+        'To confirm team deletion, visit '
+        'http://localhost:8000/team/delete/{}\n'
+        'Use the link within 5 minutes.'
+    ),
+    Language.ru: (
+        'Для подтверждения удаления команды перейдите по ссылке '
+        'http://localhost:8000/team/delete/{}\n'
+        'Перейдите по ссылке в течении 5 минут.'
+    ),
+    Language.de: (
+        'Um das Löschen des Teams zu bestätigen, besuchen Sie '
+        'http://localhost:8000/team/delete/{}\n'
+        'Nutzen Sie den Link innerhalb von 5 Minuten.'
+    ),
+    Language.es: (
+        'Para confirmar la eliminación del equipo, visite '
+        'http://localhost:8000/team/delete/{}\n'
+        'Use el enlace en 5 minutos.'
+    ),
+    Language.fr: (
+        'Pour confirmer la suppression de l’équipe, visitez '
+        'http://localhost:8000/team/delete/{}\n'
+        'Utilisez le lien dans les 5 minutes.'
+    ),
+    Language.it: (
+        'Per confermare l’eliminazione della squadra, visita '
+        'http://localhost:8000/team/delete/{}\n'
+        'Usa il link entro 5 minuti.'
+    ),
+    Language.pt: (
+        'Para confirmar a exclusão da equipe, visite '
+        'http://localhost:8000/team/delete/{}\n'
+        'Use o link em 5 minutos.'
+    ),
+    Language.ko: (
+        '팀 삭제를 확인하려면 '
+        'http://localhost:8000/team/delete/{} 에 방문하세요.\n'
+        '5분 이내에 링크를 사용하세요.'
+    ),
+    Language.cn: (
+        '要确认删除团队，请访问 '
+        'http://localhost:8000/team/delete/{}\n'
+        '请在 5 分钟内使用该链接。'
+    ),
+})
