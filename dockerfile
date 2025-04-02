@@ -2,8 +2,7 @@ FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-ENV POETRY_VERSION=1.8.2
-RUN pip install "poetry==$POETRY_VERSION"
+RUN pip install "poetry"
 
 WORKDIR /app
 

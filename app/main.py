@@ -9,14 +9,13 @@ from litestar import status_codes as status
 from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.exceptions import HTTPException
-from litestar.openapi import OpenAPIConfig
 
 from app.caches.base import BaseAsyncTTLCache
-from app.config import (SERVICE_NAME, VERSION, Cache, CacheConfig, CacheKeys,
-                        DataBase, DataBaseConfig, Mailer, MailerConfig,
-                        TaskManager, TaskManagerConfig, Token, TokenConfig,
-                        WoWAPI, WoWAPIConfig, allow_origins, logging_config,
-                        open_api_render_plugins)
+from app.config import (SERVICE_NAME, Cache, CacheConfig, CacheKeys, DataBase,
+                        DataBaseConfig, Mailer, MailerConfig, TaskManager,
+                        TaskManagerConfig, Token, TokenConfig, WoWAPI,
+                        WoWAPIConfig, allow_origins, logging_config,
+                        openapi_config)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
 from app.db.wow_api.base import BaseAsyncWoWAPI
@@ -83,7 +82,7 @@ def provide_cache() -> BaseAsyncTTLCache:
     return app.state.cache
 
 
-def provide_cache_keys() -> dict[str, str]:
+def provide_cache_keys() -> CacheKeys:
     return app.state.cache_keys
 
 
@@ -128,11 +127,7 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 app = Litestar(
     route_handlers=[AuthController, TeamController, UserController, RaiderController,
                     ItemController, QueueController, LogController, CoreController],
-    openapi_config=OpenAPIConfig(
-        title=f'{SERVICE_NAME} API',
-        version=VERSION,
-        render_plugins=open_api_render_plugins
-    ),
+    openapi_config=openapi_config,
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
         'cache': Provide(provide_cache, sync_to_thread=False),

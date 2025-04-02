@@ -1,5 +1,4 @@
 # flake8-in-file-ignores: noqa: WPS201
-
 import logging
 import os
 from dataclasses import dataclass, field
@@ -11,6 +10,7 @@ from types import MappingProxyType
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
 from litestar.logging import LoggingConfig
+from litestar.openapi import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 
 from app.caches.base import RedisAsyncCache
@@ -72,9 +72,15 @@ logging_config = LoggingConfig(
     log_exceptions='always',
 )
 
-DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore
+openapi_config = OpenAPIConfig(
+    title=f'{SERVICE_NAME} API',
+    version=VERSION,
+    render_plugins=[
+        SwaggerRenderPlugin()
+    ]
+)
 
-open_api_render_plugins = [SwaggerRenderPlugin()]
+DATABASE_URL: str = os.getenv('DATABASE_URL')  # type: ignore
 
 _db_logger = logging.getLogger('sqlalchemy.engine')
 _db_logger.setLevel(logging.INFO)
