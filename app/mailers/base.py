@@ -41,7 +41,8 @@ class AsyncSMTPMailer(BaseAsyncMailer[SMTPConfig]):
                 port=self.config.smtp_port,
                 username=self.config.smtp_user,
                 password=self.config.smtp_password,
-                use_tls=False
+                use_tls=False,
+                start_tls=False
             )
             await self.smtp_session.connect()
             await self.smtp_session.noop()

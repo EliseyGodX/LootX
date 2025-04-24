@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Generic, Self, TypeVar
 
 import jwt
 
-from app.config import dataclass
 from app.tokens.configs import BaseTokenConfig, JWTokenConfig
 from app.tokens.payloads import (AccessTokenPayload, BaseTokenPayload,
                                  ChangePasswordTokenPayload,
@@ -87,11 +87,11 @@ class JWToken(BaseToken[JWTokenConfig]):
 
 
 def create_registration_token(
-    token_type: type[TokenType], token_config: BaseTokenConfig, token_exp: timedelta,
+    token_type: type[TokenType], token_config: BaseTokenConfig, exp: timedelta,
     sub: Username
 ) -> TokenType:
     registration_token_payload = RegistrationTokenPayload(
-        exp=int((datetime.now(UTC) + token_exp).timestamp()),
+        exp=int((datetime.now(UTC) + exp).timestamp()),
         sub=sub,
     )
     return token_type(

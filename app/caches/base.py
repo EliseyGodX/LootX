@@ -75,5 +75,5 @@ class RedisAsyncCache(BaseAsyncTTLCache[RedisConfig]):
             self.config.logger.warning(e, exc_info=True)
 
     async def close(self) -> None:
-        await self.redis.close()
+        await self.redis.aclose()
         self.config.logger.info('Redis: close')

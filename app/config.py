@@ -1,4 +1,5 @@
 # flake8-in-file-ignores: noqa: WPS201
+
 import logging
 import os
 from dataclasses import dataclass, field
@@ -9,6 +10,7 @@ from types import MappingProxyType
 
 from dotenv import load_dotenv
 from kapusta import AlchemyCRUD
+from litestar.config.cors import CORSConfig
 from litestar.logging import LoggingConfig
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
@@ -26,6 +28,9 @@ from app.task_managers.configs import KapustaConfig
 from app.tokens.base import JWToken
 from app.tokens.configs import JWTokenConfig
 
+SERVICE_NAME = 'LootX'
+VERSION = '0.0.0'
+
 
 class Language(Enum):
     ru = 'ru'
@@ -39,15 +44,14 @@ class Language(Enum):
     cn = 'cn'
 
 
-SERVICE_NAME = 'LootX'
-VERSION = '0.0.0'
-
 APP_PATH = Path(__file__).parent
 ROOT_PATH = APP_PATH.parent
 
 load_dotenv(ROOT_PATH / '.env')
 
-allow_origins = os.getenv('ALLOW_ORIGINS').split(',')  # type: ignore
+cors_config = CORSConfig(
+    allow_origins=os.getenv('ALLOW_ORIGINS').split(',')  # type: ignore
+)
 
 logging_config = LoggingConfig(
     root={

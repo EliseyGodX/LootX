@@ -122,6 +122,9 @@ class TeamController(BaseController[TeamConfig]):
         if owner.id != auth_client.sub:
             raise litestar_raise(error.UserNotTeamOwner)
 
+        if data.name in self.config.restricted_name_list:
+            raise litestar_raise(error.TeamNameNotUnique)
+
         team = await db.update_team(
             id=team_id,
             name=data.name,

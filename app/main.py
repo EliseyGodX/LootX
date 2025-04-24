@@ -6,7 +6,6 @@ from typing import AsyncIterator, NoReturn
 
 from litestar import Litestar, Request
 from litestar import status_codes as status
-from litestar.config.cors import CORSConfig
 from litestar.di import Provide
 from litestar.exceptions import HTTPException
 
@@ -14,7 +13,7 @@ from app.caches.base import BaseAsyncTTLCache
 from app.config import (SERVICE_NAME, Cache, CacheConfig, CacheKeys, DataBase,
                         DataBaseConfig, Mailer, MailerConfig, TaskManager,
                         TaskManagerConfig, Token, TokenConfig, WoWAPI,
-                        WoWAPIConfig, allow_origins, logging_config,
+                        WoWAPIConfig, cors_config, logging_config,
                         openapi_config)
 from app.db.abc.base import BaseAsyncDB
 from app.db.exc import DatabaseError
@@ -125,9 +124,9 @@ def mailer_exc_handler(request: Request, exc: MailerError) -> NoReturn:
 
 
 app = Litestar(
+    lifespan=[lifespan],
     route_handlers=[AuthController, TeamController, UserController, RaiderController,
                     ItemController, QueueController, LogController, CoreController],
-    openapi_config=openapi_config,
     dependencies={
         'db': Provide(provide_db, sync_to_thread=False),
         'cache': Provide(provide_cache, sync_to_thread=False),
@@ -140,11 +139,11 @@ app = Litestar(
         'lang': Provide(get_language, sync_to_thread=False),
         'auth_client': Provide(provide_auth_client_dep, sync_to_thread=False)
     },
-    lifespan=[lifespan],
     exception_handlers={
         DatabaseError: database_exc_handler,
         MailerError: mailer_exc_handler
     },
-    cors_config=CORSConfig(allow_origins=allow_origins),
+    openapi_config=openapi_config,
+    cors_config=cors_config,
     logging_config=logging_config
 )

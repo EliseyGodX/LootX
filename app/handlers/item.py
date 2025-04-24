@@ -40,7 +40,11 @@ class ItemController(BaseController[ItemConfig]):
         except WoWItemNotFoundError:
             raise litestar_raise(error.ItemNotExists)
 
-    @get('/wow-id/{item_wow_id:str}', tags=[tags.item_handler])
+    @get('/wow-id/{item_wow_id:str}', responses={
+        422: litestar_response_spec(examples=[
+            Example('ItemNotExists', value=error.ItemNotExists())
+        ])
+    }, tags=[tags.item_handler])
     async def get_item_by_wow_id(
         self, db: DataBase, lang: Language, wow_api: WoWAPI, item_wow_id: int,
         addon: EnumAddons = EnumAddons.retail

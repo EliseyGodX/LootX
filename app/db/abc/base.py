@@ -8,7 +8,7 @@ from ulid import ULID
 from app.db.abc.configs import BaseDBConfig
 from app.db.abc.models import (LogProtocol, QueueProtocol, RaiderProtocol,
                                TeamProtocol, UserProtocol, WoWItemProtocol)
-from app.db.enums import EnumAddons, EnumLanguages
+from app.db.enums import EnumAddons, EnumClasses, EnumLanguages
 from app.db.wow_api.base import BaseAsyncWoWAPI
 from app.types import RaiderId, Sentinel, TeamId, UserId, Username, WoWItemId
 
@@ -114,6 +114,12 @@ class BaseAsyncDB(ABC, Generic[DBConfig]):
     ###
     # Raider model
     ###
+
+    @abstractmethod
+    async def create_raider(
+        self, name: str, team_id: TeamId, class_name: EnumClasses,
+        is_active: bool = True, id: RaiderId = Sentinel
+    ) -> RaiderProtocol: ...
 
     @abstractmethod
     async def get_raider(self, id: RaiderId) -> RaiderProtocol: ...

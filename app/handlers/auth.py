@@ -94,7 +94,7 @@ class AuthController(BaseController[AuthConfig]):
         registration_token = create_registration_token(
             token_type=token_type,
             token_config=token_config,
-            token_exp=self.config.registration_token_exp,
+            exp=self.config.registration_token_exp,
             sub=data.username
         ).encode()
 
