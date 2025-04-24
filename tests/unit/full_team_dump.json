@@ -1,0 +1,101 @@
+{
+    "team": {
+      "name": "full_team",
+      "addon": "retail"
+    },
+    "queues": [
+      {
+        "wow_item_id": 16541,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } },
+          { "position": 9, "raider": { "name": "8", "class_name": "monk", "is_active": true } },
+          { "position": 10, "raider": { "name": "9", "class_name": "druid", "is_active": true } },
+          { "position": 11, "raider": { "name": "10", "class_name": "demon-hunter", "is_active": true } },
+          { "position": 12, "raider": { "name": "11", "class_name": "death-knight", "is_active": true } },
+          { "position": 13, "raider": { "name": "12", "class_name": "evoker", "is_active": true } }
+        ]
+      },
+      {
+        "wow_item_id": 16542,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } },
+          { "position": 9, "raider": { "name": "8", "class_name": "monk", "is_active": true } },
+          { "position": 10, "raider": { "name": "9", "class_name": "druid", "is_active": true } },
+          { "position": 11, "raider": { "name": "10", "class_name": "demon-hunter", "is_active": true } },
+          { "position": 12, "raider": { "name": "11", "class_name": "death-knight", "is_active": true } }
+        ]
+      },
+      {
+        "wow_item_id": 16543,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } },
+          { "position": 9, "raider": { "name": "8", "class_name": "monk", "is_active": true } },
+          { "position": 10, "raider": { "name": "9", "class_name": "druid", "is_active": true } },
+          { "position": 11, "raider": { "name": "10", "class_name": "demon-hunter", "is_active": true } }
+        ]
+      },
+      {
+        "wow_item_id": 16544,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } },
+          { "position": 9, "raider": { "name": "8", "class_name": "monk", "is_active": true } },
+          { "position": 10, "raider": { "name": "9", "class_name": "druid", "is_active": true } }
+        ]
+      },
+      {
+        "wow_item_id": 16545,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } },
+          { "position": 9, "raider": { "name": "8", "class_name": "monk", "is_active": true } }
+        ]
+      },
+      {
+        "wow_item_id": 165458,
+        "queue": [
+          { "position": 1, "raider": { "name": "0", "class_name": "warrior", "is_active": true } },
+          { "position": 2, "raider": { "name": "1", "class_name": "paladin", "is_active": true } },
+          { "position": 3, "raider": { "name": "2", "class_name": "hunter", "is_active": true } },
+          { "position": 4, "raider": { "name": "3", "class_name": "rogue", "is_active": true } },
+          { "position": 5, "raider": { "name": "4", "class_name": "priest", "is_active": true } },
+          { "position": 6, "raider": { "name": "5", "class_name": "shaman", "is_active": true } },
+          { "position": 7, "raider": { "name": "6", "class_name": "mage", "is_active": true } },
+          { "position": 8, "raider": { "name": "7", "class_name": "warlock", "is_active": true } }
+        ]
+      }
+    ]
+  }
